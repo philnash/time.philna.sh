@@ -1,12 +1,13 @@
-const CACHE_NAME = 'timetime-zone-v18';
+const CACHE_NAME = 'timetime-zone-v19';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/styles.css?v=9',
-  '/app.js?v=5',
+  '/app.js?v=6',
   '/data/cities.json',
   '/manifest.webmanifest',
   '/assets/icon.svg',
+  '/assets/icon-light.svg',
 ];
 
 self.addEventListener('install', (event) => {

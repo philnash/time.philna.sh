@@ -4,6 +4,8 @@ const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
 const THEME_STORAGE_KEY = 'timetime-theme';
 const VALID_THEME_CHOICES = new Set(['system', 'light', 'dark']);
+const HEADER_ICON_DEFAULT = '/assets/icon.svg';
+const HEADER_ICON_LIGHT = '/assets/icon-light.svg';
 
 const state = {
   cities: [],
@@ -20,6 +22,7 @@ const refs = {
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
+  brandIcon: document.querySelector('.brand-icon'),
   timeScrubber: document.getElementById('time-scrubber'),
   timeSlider: document.getElementById('time-slider'),
   timeSliderValue: document.getElementById('time-slider-value'),
@@ -37,6 +40,10 @@ const hasNavigationApi =
   typeof window !== 'undefined' &&
   typeof window.navigation === 'object' &&
   typeof window.navigation.navigate === 'function';
+const systemThemeQuery =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
 
 function normalizeText(value) {
   return String(value || '')
@@ -483,6 +490,22 @@ function updateThemeButtons() {
   }
 }
 
+function resolvedThemeMode() {
+  if (themeChoice !== 'system') {
+    return themeChoice;
+  }
+
+  return systemThemeQuery?.matches ? 'dark' : 'light';
+}
+
+function updateBrandIcon() {
+  if (!refs.brandIcon) {
+    return;
+  }
+
+  refs.brandIcon.src = resolvedThemeMode() === 'dark' ? HEADER_ICON_LIGHT : HEADER_ICON_DEFAULT;
+}
+
 function applyThemeChoice(choice, persist = true) {
   themeChoice = VALID_THEME_CHOICES.has(choice) ? choice : 'system';
 
@@ -505,6 +528,7 @@ function applyThemeChoice(choice, persist = true) {
   }
 
   updateThemeButtons();
+  updateBrandIcon();
 }
 
 function initTheme() {
@@ -625,6 +649,20 @@ function bindEvents() {
 
     applyThemeChoice(button.dataset.themeChoice, true);
   });
+
+  if (systemThemeQuery) {
+    const onSystemThemeChange = () => {
+      if (themeChoice === 'system') {
+        updateBrandIcon();
+      }
+    };
+
+    if (typeof systemThemeQuery.addEventListener === 'function') {
+      systemThemeQuery.addEventListener('change', onSystemThemeChange);
+    } else if (typeof systemThemeQuery.addListener === 'function') {
+      systemThemeQuery.addListener(onSystemThemeChange);
+    }
+  }
 
   if (hasNavigationApi) {
     window.navigation.addEventListener('navigate', (event) => {

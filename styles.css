@@ -115,6 +115,20 @@ body {
   padding: 0.5rem 0.25rem 0.2rem;
 }
 
+.hero-brand {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.brand-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgb(2 132 199 / 0.2);
+  flex-shrink: 0;
+}
+
 .hero h1 {
   margin: 0;
   font-size: clamp(1.7rem, 3vw, 2.7rem);
@@ -488,6 +502,10 @@ input[type='search'],
   .hero {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero-brand {
+    align-items: center;
   }
 
   .theme-toggle {
