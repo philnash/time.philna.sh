@@ -11,17 +11,19 @@ It lets you compare local time across cities worldwide, pick a custom date/time,
 - Time conversion powered by JavaScript `Intl` APIs
 - Anchor-city model: selected date/time is interpreted in the first city
 - Readable path-based URLs for full state sharing
-- Back/forward state restoration via the Web Navigation API
+- Back/forward state restoration via Web Navigation API with History API fallback
 - Offline support with a service worker (PWA behavior)
 - Mobile-friendly responsive UI
 - Respects system light/dark mode (`prefers-color-scheme`)
 
 ## How It Works
 
+- The root path (`/`) starts with no selected cities.
 - City list order matters. The first city is the **anchor**.
 - The selected `YYYY-MM-DDTHH:mm` value is treated as wall time in the anchor city.
 - All other city times are calculated from the resulting instant.
 - App state is encoded into the URL path.
+- Once at least one city is selected, the URL transitions to `/compare/...`.
 
 Example URL:
 
@@ -84,13 +86,14 @@ You can also open a deep link directly, for example:
 
 ## Browser Support
 
-This app intentionally uses the **Web Navigation API** for URL/history control.
+The app uses the **Web Navigation API** when available and automatically falls back to the **History API** (`pushState`/`replaceState` + `popstate`) when it is not.
 
-That means it targets browsers that support `window.navigation` (modern Chromium-based browsers). There is currently no History API fallback.
+This allows it to work across modern Chromium, Firefox, and Safari builds while still taking advantage of newer navigation primitives where supported.
 
 ## Offline / PWA Notes
 
 - Service worker precaches core files and the city dataset.
+- Runtime asset fetches are network-first with cache fallback, which keeps updates from getting stuck behind stale cached JS/CSS.
 - After first successful load, the app can be used offline.
 - Navigation requests are routed to the app shell when needed.
 

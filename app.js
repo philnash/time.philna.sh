@@ -1,5 +1,4 @@
 const CITY_DATA_URL = '/data/cities.json';
-const DEFAULT_CITY_SLUGS = ['melbourne-au', 'new-york-us'];
 const ROUTE_PREFIX = '/compare';
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
@@ -24,6 +23,10 @@ const formatters = new Map();
 const citiesBySlug = new Map();
 let cities = [];
 let searchResults = [];
+const hasNavigationApi =
+  typeof window !== 'undefined' &&
+  typeof window.navigation === 'object' &&
+  typeof window.navigation.navigate === 'function';
 
 function normalizeText(value) {
   return String(value || '')
@@ -176,18 +179,36 @@ function formatDayDelta(delta) {
   return `${delta > 0 ? '+' : ''}${delta} days`;
 }
 
-function formatNowInTimeZone(timeZone) {
-  const parts = getZonedParts(Date.now(), timeZone);
-  const year = parts.year;
-  const month = String(parts.month).padStart(2, '0');
-  const day = String(parts.day).padStart(2, '0');
-  const hour = String(parts.hour).padStart(2, '0');
-  const minute = String(parts.minute).padStart(2, '0');
+function formatNowAsLocalInput() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
 function serializePath(current) {
+  if (!current.cities.length) {
+    return '/';
+  }
+
   return `${ROUTE_PREFIX}/${current.cities.join('/')}/${toPathDateTime(current.dateTime)}`;
+}
+
+function navigateToPath(path, mode = 'push') {
+  if (hasNavigationApi) {
+    window.navigation.navigate(path, { history: mode });
+    return;
+  }
+
+  if (mode === 'replace') {
+    history.replaceState(null, '', path);
+    return;
+  }
+
+  history.pushState(null, '', path);
 }
 
 function parsePath(pathname) {
@@ -268,6 +289,10 @@ function renderSearchResults() {
   refs.results.hidden = false;
 }
 
+function hideSearchResults() {
+  refs.results.hidden = true;
+}
+
 function renderCities() {
   refs.list.innerHTML = '';
 
@@ -339,15 +364,23 @@ function applyState(nextState, pushHistory = true) {
 
   const nextPath = serializePath(state);
   if (pushHistory && location.pathname !== nextPath) {
-    window.navigation.navigate(nextPath, { history: 'push' });
+    navigateToPath(nextPath, 'push');
   }
 }
 
 function replacePathFromState() {
   const nextPath = serializePath(state);
   if (location.pathname !== nextPath) {
-    window.navigation.navigate(nextPath, { history: 'replace' });
+    navigateToPath(nextPath, 'replace');
   }
+}
+
+function buildDefaultState() {
+  return {
+    cities: [],
+    dateTime: formatNowAsLocalInput(),
+    source: 'default',
+  };
 }
 
 function moveCity(slug, direction) {
@@ -367,8 +400,7 @@ function moveCity(slug, direction) {
 }
 
 function removeCity(slug) {
-  if (state.cities.length <= 1) {
-    updateMessage('At least one city is required.');
+  if (!state.cities.includes(slug)) {
     return;
   }
 
@@ -405,10 +437,22 @@ function bindEvents() {
     renderSearchResults();
   });
 
+  refs.search.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && searchResults.length > 0) {
+      event.preventDefault();
+      addCity(searchResults[0].slug);
+    }
+  });
+
   refs.search.addEventListener('blur', () => {
     setTimeout(() => {
-      refs.results.hidden = true;
+      hideSearchResults();
     }, 120);
+  });
+
+  // Keep result buttons clickable by preventing focus transfer from the input.
+  refs.results.addEventListener('mousedown', (event) => {
+    event.preventDefault();
   });
 
   refs.results.addEventListener('click', (event) => {
@@ -447,22 +491,37 @@ function bindEvents() {
     }
   });
 
-  window.navigation.addEventListener('navigate', (event) => {
-    const destination = new URL(event.destination.url);
-    if (destination.origin !== location.origin) {
-      return;
-    }
+  if (hasNavigationApi) {
+    window.navigation.addEventListener('navigate', (event) => {
+      const destination = new URL(event.destination.url);
+      if (destination.origin !== location.origin) {
+        return;
+      }
 
-    const parsed = parsePath(destination.pathname);
-    if (!parsed) {
-      return;
-    }
+      const parsed = parsePath(destination.pathname);
+      if (!parsed) {
+        return;
+      }
 
-    event.intercept({
-      handler: async () => {
-        applyState(parsed, false);
-      },
+      event.intercept({
+        handler: async () => {
+          applyState(parsed, false);
+        },
+      });
     });
+    return;
+  }
+
+  window.addEventListener('popstate', () => {
+    const parsed = parsePath(location.pathname);
+    if (parsed) {
+      applyState(parsed, false);
+      return;
+    }
+
+    const defaultState = buildDefaultState();
+    applyState(defaultState, false);
+    replacePathFromState();
   });
 }
 
@@ -479,11 +538,6 @@ async function registerServiceWorker() {
 }
 
 async function init() {
-  if (!window.navigation) {
-    updateMessage('This app requires the Web Navigation API and a modern browser.');
-    return;
-  }
-
   const response = await fetch(CITY_DATA_URL);
   cities = await response.json();
   for (const city of cities) {
@@ -491,17 +545,13 @@ async function init() {
   }
 
   const parsedFromPath = parsePath(location.pathname);
-
-  const fallbackCities = DEFAULT_CITY_SLUGS.filter((slug) => citiesBySlug.has(slug));
-  const selectedCities = parsedFromPath?.cities || fallbackCities;
-  const anchorForDefault = citiesBySlug.get(selectedCities[0]) || cities[0];
-  const dateTime = parsedFromPath?.dateTime || formatNowInTimeZone(anchorForDefault.timeZone);
+  const defaultState = buildDefaultState();
 
   applyState(
     {
-      cities: selectedCities.length ? selectedCities : [cities[0].slug],
-      dateTime,
-      source: parsedFromPath ? 'url' : 'default',
+      cities: parsedFromPath?.cities || defaultState.cities,
+      dateTime: parsedFromPath?.dateTime || defaultState.dateTime,
+      source: parsedFromPath ? 'url' : defaultState.source,
     },
     false,
   );

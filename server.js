@@ -14,6 +14,7 @@ const mimeTypes = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
 };
+const noCacheExts = new Set(['.html', '.js', '.css', '.json', '.webmanifest']);
 
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
@@ -34,7 +35,7 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       'content-type': mimeTypes[ext] || 'application/octet-stream',
-      'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+      'cache-control': noCacheExts.has(ext) ? 'no-cache' : 'public, max-age=3600',
     });
 
     fs.createReadStream(filePath).pipe(res);

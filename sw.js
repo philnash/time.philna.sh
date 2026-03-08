@@ -1,9 +1,9 @@
-const CACHE_NAME = 'timetime-zone-v3';
+const CACHE_NAME = 'timetime-zone-v7';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
+  '/styles.css?v=2',
+  '/app.js?v=4',
   '/data/cities.json',
   '/manifest.webmanifest',
   '/assets/icon.svg',
@@ -37,6 +37,8 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then(async (response) => {
           if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put('/index.html', response.clone());
             return response;
           }
 
@@ -55,20 +57,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
+  if (request.method !== 'GET') {
+    return;
+  }
 
-      return fetch(request).then((response) => {
-        if (response.ok && request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+  event.respondWith(
+    fetch(request)
+      .then(async (response) => {
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, response.clone());
+        }
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) {
+          return cached;
         }
 
-        return response;
-      });
-    }),
+        if (request.mode === 'navigate') {
+          const cache = await caches.open(CACHE_NAME);
+          return cache.match('/index.html');
+        }
+
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      }),
   );
 });
