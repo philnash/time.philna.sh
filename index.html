@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0f1f" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>TimeTime Zone</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <h1>TimeTime Zone</h1>
+        <p>Compare time across cities instantly.</p>
+      </header>
+
+      <section class="panel controls" aria-label="Comparison controls">
+        <div class="field">
+          <label for="datetime">Anchor Date & Time</label>
+          <input id="datetime" name="datetime" type="datetime-local" />
+        </div>
+
+        <div class="field field-search">
+          <label for="city-search">Add City</label>
+          <input id="city-search" name="city-search" type="search" placeholder="Search city or country" autocomplete="off" />
+          <ul id="search-results" class="search-results" hidden></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="cities-header">
+          <h2>Compared Cities</h2>
+          <p id="route-preview" class="route-preview"></p>
+        </div>
+        <ol id="cities" class="cities" aria-live="polite"></ol>
+      </section>
+
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+    </main>
+
+    <template id="city-row-template">
+      <li class="city-row">
+        <article>
+          <div class="city-main">
+            <h3 class="city-name"></h3>
+            <p class="city-meta"></p>
+          </div>
+          <div class="city-time">
+            <p class="time-line"></p>
+            <p class="date-line"></p>
+            <p class="delta-line"></p>
+          </div>
+          <div class="city-actions">
+            <button type="button" data-action="up" aria-label="Move city up">↑</button>
+            <button type="button" data-action="down" aria-label="Move city down">↓</button>
+            <button type="button" data-action="remove" aria-label="Remove city">Remove</button>
+          </div>
+        </article>
+      </li>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
