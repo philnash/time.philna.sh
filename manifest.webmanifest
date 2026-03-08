@@ -1,6 +1,6 @@
 {
-  "name": "TimeTime Zone",
-  "short_name": "TimeTime",
+  "name": "Phil's Time",
+  "short_name": "Phil's Time",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
