@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=18" />
+    <link rel="stylesheet" href="/styles.css?v=19" />
     <title>TimeTime Zone</title>
   </head>
   <body>
@@ -58,9 +58,14 @@
 
       <section class="panel">
         <div class="cities-header">
-          <h2>Compared Cities</h2>
           <div class="share-link">
-            <label for="route-preview">Share link</label>
+            <div class="share-link-heading">
+              <label for="route-preview">Share / bookmark link</label>
+              <label class="share-link-toggle" for="share-include-datetime">
+                <input id="share-include-datetime" name="share-include-datetime" type="checkbox" checked />
+                Include date & time
+              </label>
+            </div>
             <div class="share-link-row">
               <input id="route-preview" class="route-preview-input" type="text" readonly />
               <button id="copy-link" class="copy-link" type="button" aria-label="Copy link to clipboard">
@@ -123,6 +128,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=12"></script>
+    <script type="module" src="/app.js?v=14"></script>
   </body>
 </html>

@@ -317,19 +317,37 @@ input[type='search'],
   margin-bottom: 0.65rem;
 }
 
-.cities-header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
 .share-link {
   display: grid;
   gap: 0.3rem;
 }
 
+.share-link-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .share-link label {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+.share-link-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  user-select: none;
+  cursor: pointer;
+}
+
+.share-link-toggle input {
+  margin: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+  accent-color: var(--accent);
 }
 
 .share-link-row {
@@ -495,8 +513,7 @@ input[type='search'],
   }
 
   .cities-header {
-    grid-template-columns: auto minmax(340px, 1fr);
-    align-items: end;
+    grid-template-columns: 1fr;
   }
 
   .city-row article {

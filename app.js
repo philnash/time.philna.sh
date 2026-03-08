@@ -22,6 +22,7 @@ const refs = {
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
+  includeDateInLink: document.getElementById('share-include-datetime'),
   brandIcon: document.querySelector('.brand-icon'),
   themeToggle: document.querySelector('.theme-toggle'),
 };
@@ -31,6 +32,7 @@ const citiesBySlug = new Map();
 let cities = [];
 let searchResults = [];
 let themeChoice = 'system';
+let includeDateInUrl = true;
 
 const hasNavigationApi =
   typeof window !== 'undefined' &&
@@ -293,6 +295,14 @@ function formatDateTimeLocalFromParts(parts) {
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}T${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
 }
 
+function formatNowForTimeZone(timeZone) {
+  if (!timeZone) {
+    return formatNowAsLocalInput();
+  }
+
+  return formatDateTimeLocalFromParts(getZonedParts(Date.now(), timeZone));
+}
+
 function minutesToTimeString(totalMinutes) {
   const normalized = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
   const hours = Math.floor(normalized / 60);
@@ -300,12 +310,17 @@ function minutesToTimeString(totalMinutes) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-function serializePath(current) {
+function serializePath(current, withDateTime = includeDateInUrl) {
   if (!current.cities.length) {
     return '/';
   }
 
-  return `${ROUTE_PREFIX}/${current.cities.join('/')}/${toPathDateTime(current.dateTime)}`;
+  const basePath = `${ROUTE_PREFIX}/${current.cities.join('/')}`;
+  if (!withDateTime) {
+    return basePath;
+  }
+
+  return `${basePath}/${toPathDateTime(current.dateTime)}`;
 }
 
 function navigateToPath(path, mode = 'push') {
@@ -324,17 +339,16 @@ function navigateToPath(path, mode = 'push') {
 
 function parsePath(pathname) {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments.length < 3 || segments[0] !== ROUTE_PREFIX.replace('/', '')) {
+  if (segments.length < 2 || segments[0] !== ROUTE_PREFIX.replace('/', '')) {
     return null;
   }
 
   const dateTimeSegment = decodeURIComponent(segments[segments.length - 1]);
-  const dateTime = fromPathDateTime(dateTimeSegment);
-  if (!dateTime) {
-    return null;
-  }
+  const parsedDateTime = fromPathDateTime(dateTimeSegment);
+  const pathIncludesDateTime = Boolean(parsedDateTime);
 
-  const candidateCities = segments.slice(1, -1).map((segment) => decodeURIComponent(segment));
+  const cityPathSegments = pathIncludesDateTime ? segments.slice(1, -1) : segments.slice(1);
+  const candidateCities = cityPathSegments.map((segment) => decodeURIComponent(segment));
   if (!candidateCities.length) {
     return null;
   }
@@ -344,10 +358,14 @@ function parsePath(pathname) {
     return null;
   }
 
+  const anchorCity = citiesBySlug.get(uniqueCities[0]);
+  const dateTime = parsedDateTime || formatNowForTimeZone(anchorCity?.timeZone);
+
   return {
     cities: uniqueCities,
     dateTime,
     source: 'url',
+    pathIncludesDateTime,
   };
 }
 
@@ -480,8 +498,14 @@ function applyState(nextState, historyMode = 'push') {
   state.cities = nextState.cities;
   state.dateTime = nextState.dateTime;
   state.source = nextState.source || 'ui';
+  if (typeof nextState.pathIncludesDateTime === 'boolean') {
+    includeDateInUrl = nextState.pathIncludesDateTime;
+  }
 
   refs.datetime.value = state.dateTime;
+  if (refs.includeDateInLink) {
+    refs.includeDateInLink.checked = includeDateInUrl;
+  }
   renderCities();
   updateRoutePreview();
 
@@ -503,6 +527,7 @@ function buildDefaultState() {
     cities: [],
     dateTime: formatNowAsLocalInput(),
     source: 'default',
+    pathIncludesDateTime: true,
   };
 }
 
@@ -815,6 +840,14 @@ function bindEvents() {
     copyShareLink();
   });
 
+  if (refs.includeDateInLink) {
+    refs.includeDateInLink.addEventListener('change', () => {
+      includeDateInUrl = refs.includeDateInLink.checked;
+      updateRoutePreview();
+      replacePathFromState();
+    });
+  }
+
   refs.themeToggle.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-theme-choice]');
     if (!button) {
@@ -901,6 +934,7 @@ async function init() {
       cities: parsedFromPath?.cities || defaultState.cities,
       dateTime: parsedFromPath?.dateTime || defaultState.dateTime,
       source: parsedFromPath ? 'url' : defaultState.source,
+      pathIncludesDateTime: parsedFromPath?.pathIncludesDateTime ?? defaultState.pathIncludesDateTime,
     },
     'none',
   );
