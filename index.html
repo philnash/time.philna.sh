@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=19" />
+    <link rel="stylesheet" href="/styles.css?v=25" />
     <title>TimeTime Zone</title>
   </head>
   <body>
@@ -54,29 +54,50 @@
           <input id="city-search" name="city-search" type="search" placeholder="Search city or country" autocomplete="off" />
           <ul id="search-results" class="search-results" hidden></ul>
         </div>
+
+        <div class="controls-actions">
+          <button
+            id="share-toggle"
+            class="share-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="share-panel"
+            aria-label="Toggle share options"
+          >
+            <svg class="share-icon share-icon-share" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
+              <circle cx="6" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
+              <circle cx="18" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M8.1 11l7.8-4.5M8.1 13l7.8 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <svg class="share-icon share-icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            <span class="sr-only">Share</span>
+          </button>
+        </div>
+
+        <div id="share-panel" class="share-link share-link-panel" aria-hidden="true" inert hidden>
+          <div class="share-link-heading">
+            <label for="route-preview">Share / bookmark link</label>
+            <label class="share-link-toggle" for="share-include-datetime">
+              <input id="share-include-datetime" name="share-include-datetime" type="checkbox" checked />
+              Include date & time
+            </label>
+          </div>
+          <div class="share-link-row">
+            <input id="route-preview" class="route-preview-input" type="text" readonly />
+            <button id="copy-link" class="copy-link" type="button" aria-label="Copy link to clipboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H10V7h9v14Z" />
+              </svg>
+              <span class="sr-only">Copy link to clipboard</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <section class="panel">
-        <div class="cities-header">
-          <div class="share-link">
-            <div class="share-link-heading">
-              <label for="route-preview">Share / bookmark link</label>
-              <label class="share-link-toggle" for="share-include-datetime">
-                <input id="share-include-datetime" name="share-include-datetime" type="checkbox" checked />
-                Include date & time
-              </label>
-            </div>
-            <div class="share-link-row">
-              <input id="route-preview" class="route-preview-input" type="text" readonly />
-              <button id="copy-link" class="copy-link" type="button" aria-label="Copy link to clipboard">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H10V7h9v14Z" />
-                </svg>
-                <span class="sr-only">Copy link to clipboard</span>
-              </button>
-            </div>
-          </div>
-        </div>
         <ol id="cities" class="cities" aria-live="polite"></ol>
       </section>
 
@@ -128,6 +149,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=14"></script>
+    <script type="module" src="/app.js?v=17"></script>
   </body>
 </html>

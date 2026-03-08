@@ -23,6 +23,8 @@ const refs = {
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
   includeDateInLink: document.getElementById('share-include-datetime'),
+  shareToggle: document.getElementById('share-toggle'),
+  sharePanel: document.getElementById('share-panel'),
   brandIcon: document.querySelector('.brand-icon'),
   themeToggle: document.querySelector('.theme-toggle'),
 };
@@ -33,6 +35,8 @@ let cities = [];
 let searchResults = [];
 let themeChoice = 'system';
 let includeDateInUrl = true;
+let sharePanelHideTimer = null;
+let sharePanelCloseTransitionHandler = null;
 
 const hasNavigationApi =
   typeof window !== 'undefined' &&
@@ -375,6 +379,66 @@ function updateMessage(text = '') {
 
 function updateRoutePreview() {
   refs.routePreview.value = `${location.origin}${serializePath(state)}`;
+}
+
+function clearSharePanelCloseCallbacks() {
+  if (sharePanelHideTimer) {
+    window.clearTimeout(sharePanelHideTimer);
+    sharePanelHideTimer = null;
+  }
+
+  if (sharePanelCloseTransitionHandler && refs.sharePanel) {
+    refs.sharePanel.removeEventListener('transitionend', sharePanelCloseTransitionHandler);
+    sharePanelCloseTransitionHandler = null;
+  }
+}
+
+function setSharePanelOpen(isOpen) {
+  if (!refs.sharePanel || !refs.shareToggle) {
+    return;
+  }
+
+  const panel = refs.sharePanel;
+  const toggle = refs.shareToggle;
+
+  clearSharePanelCloseCallbacks();
+
+  toggle.setAttribute('aria-expanded', String(isOpen));
+  panel.setAttribute('aria-hidden', String(!isOpen));
+  if ('inert' in panel) {
+    panel.inert = !isOpen;
+  }
+
+  if (isOpen) {
+    panel.hidden = false;
+    window.requestAnimationFrame(() => {
+      panel.classList.add('is-open');
+    });
+    return;
+  }
+
+  panel.classList.remove('is-open');
+  if (panel.hidden) {
+    return;
+  }
+
+  const finishClose = () => {
+    clearSharePanelCloseCallbacks();
+    if (toggle.getAttribute('aria-expanded') === 'true') {
+      return;
+    }
+    panel.hidden = true;
+  };
+
+  sharePanelCloseTransitionHandler = (event) => {
+    if (event.target !== panel || event.propertyName !== 'max-height') {
+      return;
+    }
+    finishClose();
+  };
+
+  panel.addEventListener('transitionend', sharePanelCloseTransitionHandler);
+  sharePanelHideTimer = window.setTimeout(finishClose, 220);
 }
 
 function searchCities(query) {
@@ -840,6 +904,13 @@ function bindEvents() {
     copyShareLink();
   });
 
+  if (refs.shareToggle) {
+    refs.shareToggle.addEventListener('click', () => {
+      const isOpen = refs.shareToggle.getAttribute('aria-expanded') === 'true';
+      setSharePanelOpen(!isOpen);
+    });
+  }
+
   if (refs.includeDateInLink) {
     refs.includeDateInLink.addEventListener('change', () => {
       includeDateInUrl = refs.includeDateInLink.checked;
@@ -938,6 +1009,8 @@ async function init() {
     },
     'none',
   );
+
+  setSharePanelOpen(false);
 
   const canonicalPath = serializePath(state);
   if (location.pathname !== canonicalPath) {
