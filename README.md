@@ -11,10 +11,13 @@ It lets you compare local time across cities worldwide, pick a custom date/time,
 - Time conversion powered by JavaScript `Intl` APIs
 - Anchor-city model: selected date/time is interpreted in the first city
 - Readable path-based URLs for full state sharing
+- Share-link input with one-click clipboard copy
 - Back/forward state restoration via Web Navigation API with History API fallback
 - Offline support with a service worker (PWA behavior)
 - Mobile-friendly responsive UI
 - Respects system light/dark mode (`prefers-color-scheme`)
+- Theme switch (System / Light / Dark), defaulting to system
+- Anchor-time slider for quick time scrubbing (plus datetime input for precise edits)
 
 ## How It Works
 
@@ -82,6 +85,7 @@ You can also open a deep link directly, for example:
 
 - `npm start` — run local server on `127.0.0.1:8080`
 - `npm run build:cities` — rebuild `data/cities.json`
+- `npm run build:worldmap` — regenerate background world-map SVG assets
 - `npm test` — syntax checks for key JS files
 
 ## Browser Support

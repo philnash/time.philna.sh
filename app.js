@@ -2,6 +2,8 @@ const CITY_DATA_URL = '/data/cities.json';
 const ROUTE_PREFIX = '/compare';
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
+const THEME_STORAGE_KEY = 'timetime-theme';
+const VALID_THEME_CHOICES = new Set(['system', 'light', 'dark']);
 
 const state = {
   cities: [],
@@ -17,12 +19,20 @@ const refs = {
   template: document.getElementById('city-row-template'),
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
+  copyLink: document.getElementById('copy-link'),
+  timeScrubber: document.getElementById('time-scrubber'),
+  timeSlider: document.getElementById('time-slider'),
+  timeSliderValue: document.getElementById('time-slider-value'),
+  timeSliderLabel: document.getElementById('time-slider-label'),
+  themeToggle: document.querySelector('.theme-toggle'),
 };
 
 const formatters = new Map();
 const citiesBySlug = new Map();
 let cities = [];
 let searchResults = [];
+let themeChoice = 'system';
+
 const hasNavigationApi =
   typeof window !== 'undefined' &&
   typeof window.navigation === 'object' &&
@@ -189,6 +199,31 @@ function formatNowAsLocalInput() {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+function minutesToTimeString(totalMinutes) {
+  const normalized = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
+  const hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function dateTimeToMinutes(dateTime) {
+  const parts = parseDateTimeLocal(dateTime);
+  if (!parts) {
+    return 0;
+  }
+
+  return parts.hour * 60 + parts.minute;
+}
+
+function withTimeMinutes(dateTime, totalMinutes) {
+  if (!DATETIME_PATTERN.test(dateTime)) {
+    return dateTime;
+  }
+
+  const [datePart] = dateTime.split('T');
+  return `${datePart}T${minutesToTimeString(totalMinutes)}`;
+}
+
 function serializePath(current) {
   if (!current.cities.length) {
     return '/';
@@ -245,7 +280,25 @@ function updateMessage(text = '') {
 }
 
 function updateRoutePreview() {
-  refs.routePreview.textContent = serializePath(state);
+  refs.routePreview.value = `${location.origin}${serializePath(state)}`;
+}
+
+function updateTimeScrubber() {
+  const hasCities = state.cities.length > 0;
+  refs.timeScrubber.hidden = !hasCities;
+
+  if (!hasCities) {
+    return;
+  }
+
+  const anchorCity = citiesBySlug.get(state.cities[0]);
+  refs.timeSliderLabel.textContent = `Anchor Time (${anchorCity?.name || 'Anchor'})`;
+
+  const minutes = dateTimeToMinutes(state.dateTime);
+  refs.timeSlider.value = String(minutes);
+  const label = minutesToTimeString(minutes);
+  refs.timeSliderValue.value = label;
+  refs.timeSliderValue.textContent = label;
 }
 
 function searchCities(query) {
@@ -353,18 +406,19 @@ function renderCities() {
   updateMessage('');
 }
 
-function applyState(nextState, pushHistory = true) {
+function applyState(nextState, historyMode = 'push') {
   state.cities = nextState.cities;
   state.dateTime = nextState.dateTime;
   state.source = nextState.source || 'ui';
 
   refs.datetime.value = state.dateTime;
   renderCities();
+  updateTimeScrubber();
   updateRoutePreview();
 
   const nextPath = serializePath(state);
-  if (pushHistory && location.pathname !== nextPath) {
-    navigateToPath(nextPath, 'push');
+  if (historyMode !== 'none' && location.pathname !== nextPath) {
+    navigateToPath(nextPath, historyMode);
   }
 }
 
@@ -420,6 +474,64 @@ function addCity(slug) {
   renderSearchResults();
 }
 
+function updateThemeButtons() {
+  const buttons = refs.themeToggle.querySelectorAll('button[data-theme-choice]');
+  for (const button of buttons) {
+    const isActive = button.dataset.themeChoice === themeChoice;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  }
+}
+
+function applyThemeChoice(choice, persist = true) {
+  themeChoice = VALID_THEME_CHOICES.has(choice) ? choice : 'system';
+
+  if (themeChoice === 'system') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themeChoice);
+  }
+
+  if (persist) {
+    try {
+      if (themeChoice === 'system') {
+        localStorage.removeItem(THEME_STORAGE_KEY);
+      } else {
+        localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
+      }
+    } catch {
+      // Ignore storage failures (for example private browsing restrictions).
+    }
+  }
+
+  updateThemeButtons();
+}
+
+function initTheme() {
+  let storedChoice = null;
+  try {
+    storedChoice = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    storedChoice = null;
+  }
+
+  const initialChoice = VALID_THEME_CHOICES.has(storedChoice) ? storedChoice : 'system';
+  applyThemeChoice(initialChoice, false);
+}
+
+async function copyShareLink() {
+  const url = refs.routePreview.value;
+  try {
+    await navigator.clipboard.writeText(url);
+    updateMessage('Link copied to clipboard.');
+  } catch {
+    refs.routePreview.focus();
+    refs.routePreview.select();
+    const copied = document.execCommand && document.execCommand('copy');
+    updateMessage(copied ? 'Link copied to clipboard.' : 'Unable to copy link.');
+  }
+}
+
 function bindEvents() {
   refs.datetime.addEventListener('change', () => {
     const next = refs.datetime.value;
@@ -429,7 +541,18 @@ function bindEvents() {
       return;
     }
 
-    applyState({ ...state, dateTime: next, source: 'ui' });
+    applyState({ ...state, dateTime: next, source: 'ui' }, 'push');
+  });
+
+  refs.timeSlider.addEventListener('input', () => {
+    if (!state.cities.length) {
+      return;
+    }
+
+    const next = withTimeMinutes(state.dateTime, Number(refs.timeSlider.value));
+    if (next !== state.dateTime) {
+      applyState({ ...state, dateTime: next, source: 'ui' }, 'replace');
+    }
   });
 
   refs.search.addEventListener('input', () => {
@@ -450,7 +573,6 @@ function bindEvents() {
     }, 120);
   });
 
-  // Keep result buttons clickable by preventing focus transfer from the input.
   refs.results.addEventListener('mousedown', (event) => {
     event.preventDefault();
   });
@@ -491,6 +613,19 @@ function bindEvents() {
     }
   });
 
+  refs.copyLink.addEventListener('click', () => {
+    copyShareLink();
+  });
+
+  refs.themeToggle.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-theme-choice]');
+    if (!button) {
+      return;
+    }
+
+    applyThemeChoice(button.dataset.themeChoice, true);
+  });
+
   if (hasNavigationApi) {
     window.navigation.addEventListener('navigate', (event) => {
       const destination = new URL(event.destination.url);
@@ -505,7 +640,7 @@ function bindEvents() {
 
       event.intercept({
         handler: async () => {
-          applyState(parsed, false);
+          applyState(parsed, 'none');
         },
       });
     });
@@ -515,12 +650,12 @@ function bindEvents() {
   window.addEventListener('popstate', () => {
     const parsed = parsePath(location.pathname);
     if (parsed) {
-      applyState(parsed, false);
+      applyState(parsed, 'none');
       return;
     }
 
     const defaultState = buildDefaultState();
-    applyState(defaultState, false);
+    applyState(defaultState, 'none');
     replacePathFromState();
   });
 }
@@ -538,6 +673,8 @@ async function registerServiceWorker() {
 }
 
 async function init() {
+  initTheme();
+
   const response = await fetch(CITY_DATA_URL);
   cities = await response.json();
   for (const city of cities) {
@@ -553,7 +690,7 @@ async function init() {
       dateTime: parsedFromPath?.dateTime || defaultState.dateTime,
       source: parsedFromPath ? 'url' : defaultState.source,
     },
-    false,
+    'none',
   );
 
   const canonicalPath = serializePath(state);

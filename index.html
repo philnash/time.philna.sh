@@ -7,14 +7,21 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=2" />
+    <link rel="stylesheet" href="/styles.css?v=7" />
     <title>TimeTime Zone</title>
   </head>
   <body>
     <main class="app-shell">
       <header class="hero">
-        <h1>TimeTime Zone</h1>
-        <p>Compare time across cities instantly.</p>
+        <div>
+          <h1>TimeTime Zone</h1>
+          <p>Compare time across cities instantly.</p>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme mode">
+          <button type="button" data-theme-choice="system" aria-pressed="true">System</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+        </div>
       </header>
 
       <section class="panel controls" aria-label="Comparison controls">
@@ -31,9 +38,28 @@
       </section>
 
       <section class="panel">
+        <div id="time-scrubber" class="time-scrubber" hidden>
+          <label id="time-slider-label" for="time-slider">Anchor Time</label>
+          <div class="time-scrubber-row">
+            <input id="time-slider" name="time-slider" type="range" min="0" max="1439" step="5" />
+            <output id="time-slider-value" for="time-slider">00:00</output>
+          </div>
+        </div>
+
         <div class="cities-header">
           <h2>Compared Cities</h2>
-          <p id="route-preview" class="route-preview"></p>
+          <div class="share-link">
+            <label for="route-preview">Share link</label>
+            <div class="share-link-row">
+              <input id="route-preview" class="route-preview-input" type="text" readonly />
+              <button id="copy-link" class="copy-link" type="button" aria-label="Copy link to clipboard">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H10V7h9v14Z" />
+                </svg>
+                <span class="sr-only">Copy link to clipboard</span>
+              </button>
+            </div>
+          </div>
         </div>
         <ol id="cities" class="cities" aria-live="polite"></ol>
       </section>
@@ -62,6 +88,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=4"></script>
+    <script type="module" src="/app.js?v=5"></script>
   </body>
 </html>
