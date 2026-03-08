@@ -3,60 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0f1f" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
+    <meta
+      name="theme-color"
+      content="#0a0f1f"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta
+      name="theme-color"
+      content="#f2f5f9"
+      media="(prefers-color-scheme: light)"
+    />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=28" />
+    <link rel="stylesheet" href="/styles.css?v=30" />
     <title>Phil's Time</title>
   </head>
   <body>
     <main class="app-shell">
       <header class="hero">
         <div class="hero-brand">
-          <img class="brand-icon" src="/assets/icon.svg" alt="" aria-hidden="true" />
+          <img
+            class="brand-icon"
+            src="/assets/icon.svg"
+            alt=""
+            aria-hidden="true"
+          />
           <div>
-              <h1>Phil's Time</h1>
+            <h1>Phil's Time</h1>
           </div>
         </div>
-        <div class="theme-toggle" role="group" aria-label="Theme mode">
-          <button type="button" data-theme-choice="system" aria-label="System theme" aria-pressed="true">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M4 5h16v11H4z" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M9 19h6M12 16v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <span class="sr-only">System</span>
-          </button>
-          <button type="button" data-theme-choice="light" aria-label="Light theme" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <span class="sr-only">Light</span>
-          </button>
-          <button type="button" data-theme-choice="dark" aria-label="Dark theme" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M14.5 3.2a8.5 8.5 0 1 0 6.3 13.6A8.8 8.8 0 0 1 14.5 3.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            </svg>
-            <span class="sr-only">Dark</span>
-          </button>
-        </div>
-      </header>
-
-      <section class="panel controls" aria-label="Comparison controls">
-        <div class="field">
-          <label for="datetime">Date & Time</label>
-          <input id="datetime" name="datetime" type="datetime-local" />
-        </div>
-
-        <div class="field field-search">
-          <label for="city-search">Add City</label>
-          <input id="city-search" name="city-search" type="search" placeholder="Search city or country" autocomplete="off" />
-          <ul id="search-results" class="search-results" hidden></ul>
-        </div>
-
-        <div class="controls-actions">
-          <button id="set-now" class="now-button" type="button">now</button>
+        <div class="hero-actions">
           <button
             id="share-toggle"
             class="share-toggle"
@@ -65,36 +41,201 @@
             aria-controls="share-panel"
             aria-label="Toggle share options"
           >
-            <svg class="share-icon share-icon-share" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="18" cy="5" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
-              <circle cx="6" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
-              <circle cx="18" cy="19" r="2.2" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M8.1 11l7.8-4.5M8.1 13l7.8 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <svg
+              class="share-icon share-icon-share"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle
+                cx="18"
+                cy="5"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle
+                cx="6"
+                cy="12"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle
+                cx="18"
+                cy="19"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M8.1 11l7.8-4.5M8.1 13l7.8 4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
             </svg>
-            <svg class="share-icon share-icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            <svg
+              class="share-icon share-icon-close"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
             </svg>
             <span class="sr-only">Share</span>
           </button>
-        </div>
 
-        <div id="share-panel" class="share-link share-link-panel" aria-hidden="true" inert hidden>
+          <div class="theme-toggle" role="group" aria-label="Theme mode">
+            <button
+              type="button"
+              data-theme-choice="system"
+              aria-label="System theme"
+              aria-pressed="true"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M4 5h16v11H4z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M9 19h6M12 16v3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span class="sr-only">System</span>
+            </button>
+            <button
+              type="button"
+              data-theme-choice="light"
+              aria-label="Light theme"
+              aria-pressed="false"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span class="sr-only">Light</span>
+            </button>
+            <button
+              type="button"
+              data-theme-choice="dark"
+              aria-label="Dark theme"
+              aria-pressed="false"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M14.5 3.2a8.5 8.5 0 1 0 6.3 13.6A8.8 8.8 0 0 1 14.5 3.2z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="sr-only">Dark</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section
+        id="share-panel"
+        class="share-link-panel"
+        aria-hidden="true"
+        inert
+        hidden
+      >
+        <div class="panel share-link">
           <div class="share-link-heading">
             <label for="route-preview">Share / bookmark link</label>
             <label class="share-link-toggle" for="share-include-datetime">
-              <input id="share-include-datetime" name="share-include-datetime" type="checkbox" checked />
+              <input
+                id="share-include-datetime"
+                name="share-include-datetime"
+                type="checkbox"
+                checked
+              />
               Include date & time
             </label>
           </div>
           <div class="share-link-row">
-            <input id="route-preview" class="route-preview-input" type="text" readonly />
-            <button id="copy-link" class="copy-link" type="button" aria-label="Copy link to clipboard">
+            <input
+              id="route-preview"
+              class="route-preview-input"
+              type="text"
+              readonly
+            />
+            <button
+              id="copy-link"
+              class="copy-link"
+              type="button"
+              aria-label="Copy link to clipboard"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H10V7h9v14Z" />
+                <path
+                  d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H10V7h9v14Z"
+                />
               </svg>
               <span class="sr-only">Copy link to clipboard</span>
             </button>
           </div>
+          <p
+            id="share-message"
+            class="share-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </section>
+
+      <section class="panel controls" aria-label="Comparison controls">
+        <div class="field">
+          <label for="datetime">Date & Time</label>
+          <input id="datetime" name="datetime" type="datetime-local" />
+        </div>
+
+        <button id="set-now" class="now-button controls-now" type="button">
+          now
+        </button>
+
+        <div class="field field-search">
+          <label for="city-search">Add City</label>
+          <input
+            id="city-search"
+            name="city-search"
+            type="search"
+            placeholder="Search city or country"
+            autocomplete="off"
+          />
+          <ul id="search-results" class="search-results" hidden></ul>
         </div>
       </section>
 
@@ -105,9 +246,7 @@
       <p id="message" class="message" role="status" aria-live="polite"></p>
 
       <footer class="panel app-footer">
-        <p>
-          Made by <a href="https://philna.sh">philnash</a>
-        </p>
+        <p>Made by <a href="https://philna.sh">philnash</a></p>
       </footer>
     </main>
 
@@ -142,12 +281,33 @@
             </div>
           </div>
           <div class="city-actions">
-            <button type="button" data-action="up" aria-label="Move city up">↑</button>
-            <button type="button" data-action="down" aria-label="Move city down">↓</button>
+            <button type="button" data-action="up" aria-label="Move city up">
+              ↑
+            </button>
+            <button
+              type="button"
+              data-action="down"
+              aria-label="Move city down"
+            >
+              ↓
+            </button>
             <button type="button" data-action="remove" aria-label="Remove city">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" />
-                <path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M9 9l6 6M15 9l-6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
               <span class="sr-only">Remove city</span>
             </button>
@@ -156,6 +316,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=18"></script>
+    <script type="module" src="/app.js?v=20"></script>
   </body>
 </html>

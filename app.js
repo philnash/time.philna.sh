@@ -22,6 +22,7 @@ const refs = {
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
+  shareMessage: document.getElementById('share-message'),
   nowButton: document.getElementById('set-now'),
   includeDateInLink: document.getElementById('share-include-datetime'),
   shareToggle: document.getElementById('share-toggle'),
@@ -38,6 +39,8 @@ let themeChoice = 'system';
 let includeDateInUrl = true;
 let sharePanelHideTimer = null;
 let sharePanelCloseTransitionHandler = null;
+let shareMessageHideTimer = null;
+let shareMessageClearTimer = null;
 
 const hasNavigationApi =
   typeof window !== 'undefined' &&
@@ -382,6 +385,58 @@ function updateRoutePreview() {
   refs.routePreview.value = `${location.origin}${serializePath(state)}`;
 }
 
+function clearShareMessageTimers() {
+  if (shareMessageHideTimer) {
+    window.clearTimeout(shareMessageHideTimer);
+    shareMessageHideTimer = null;
+  }
+
+  if (shareMessageClearTimer) {
+    window.clearTimeout(shareMessageClearTimer);
+    shareMessageClearTimer = null;
+  }
+}
+
+function clearShareMessage() {
+  if (!refs.shareMessage) {
+    return;
+  }
+
+  clearShareMessageTimers();
+  refs.shareMessage.textContent = '';
+  refs.shareMessage.dataset.visible = 'false';
+  delete refs.shareMessage.dataset.state;
+}
+
+function showShareMessage(text, stateKind = '') {
+  if (!refs.shareMessage) {
+    return;
+  }
+
+  clearShareMessageTimers();
+  refs.shareMessage.textContent = text;
+  refs.shareMessage.dataset.visible = 'true';
+  if (stateKind) {
+    refs.shareMessage.dataset.state = stateKind;
+  } else {
+    delete refs.shareMessage.dataset.state;
+  }
+
+  shareMessageHideTimer = window.setTimeout(() => {
+    if (!refs.shareMessage) {
+      return;
+    }
+    refs.shareMessage.dataset.visible = 'false';
+    shareMessageClearTimer = window.setTimeout(() => {
+      if (!refs.shareMessage || refs.shareMessage.dataset.visible !== 'false') {
+        return;
+      }
+      refs.shareMessage.textContent = '';
+      delete refs.shareMessage.dataset.state;
+    }, 240);
+  }, 2800);
+}
+
 function clearSharePanelCloseCallbacks() {
   if (sharePanelHideTimer) {
     window.clearTimeout(sharePanelHideTimer);
@@ -411,6 +466,7 @@ function setSharePanelOpen(isOpen) {
   }
 
   if (isOpen) {
+    clearShareMessage();
     panel.hidden = false;
     window.requestAnimationFrame(() => {
       panel.classList.add('is-open');
@@ -419,6 +475,7 @@ function setSharePanelOpen(isOpen) {
   }
 
   panel.classList.remove('is-open');
+  clearShareMessage();
   if (panel.hidden) {
     return;
   }
@@ -794,12 +851,12 @@ async function copyShareLink() {
   const url = refs.routePreview.value;
   try {
     await navigator.clipboard.writeText(url);
-    updateMessage('Link copied to clipboard.');
+    showShareMessage('Link copied to clipboard.', 'success');
   } catch {
     refs.routePreview.focus();
     refs.routePreview.select();
     const copied = document.execCommand && document.execCommand('copy');
-    updateMessage(copied ? 'Link copied to clipboard.' : 'Unable to copy link.');
+    showShareMessage(copied ? 'Link copied to clipboard.' : 'Unable to copy link.', copied ? 'success' : 'error');
   }
 }
 
