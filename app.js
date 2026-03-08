@@ -53,12 +53,13 @@ function normalizeText(value) {
     .trim();
 }
 
-function getFormatter(timeZone, options) {
-  const key = `${timeZone}:${JSON.stringify(options)}`;
+function getFormatter(timeZone, options, locale) {
+  const localeKey = Array.isArray(locale) ? locale.join(',') : locale || 'default';
+  const key = `${localeKey}:${timeZone}:${JSON.stringify(options)}`;
   if (!formatters.has(key)) {
     formatters.set(
       key,
-      new Intl.DateTimeFormat(undefined, {
+      new Intl.DateTimeFormat(locale, {
         timeZone,
         ...options,
       }),
@@ -66,6 +67,92 @@ function getFormatter(timeZone, options) {
   }
 
   return formatters.get(key);
+}
+
+function getTimeZoneNamePart(epochMs, timeZone, style, locale) {
+  try {
+    const parts = getFormatter(timeZone, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZoneName: style,
+    }, locale).formatToParts(new Date(epochMs));
+
+    return parts.find((part) => part.type === 'timeZoneName')?.value || '';
+  } catch {
+    return '';
+  }
+}
+
+function normalizeOffsetLabel(label) {
+  if (!label) {
+    return '';
+  }
+
+  const normalized = label.trim().replace(/^GMT/i, 'UTC');
+  return normalized === 'UTC' ? 'UTC+00:00' : normalized;
+}
+
+function isOffsetLikeZoneName(label) {
+  if (!label) {
+    return true;
+  }
+
+  return /^(?:GMT|UTC)(?:[+-]\d{1,2}(?::?\d{2})?)?$/i.test(label.trim());
+}
+
+function localeCandidatesForCountry(countryCode) {
+  const list = [];
+
+  if (countryCode && /^[A-Z]{2}$/.test(countryCode)) {
+    list.push(`en-${countryCode}`);
+  }
+
+  if (typeof navigator !== 'undefined' && Array.isArray(navigator.languages)) {
+    for (const locale of navigator.languages) {
+      if (locale) {
+        list.push(locale);
+      }
+    }
+  }
+
+  list.push(undefined);
+
+  return [...new Set(list)];
+}
+
+function getPreferredShortZoneName(epochMs, timeZone, countryCode) {
+  const locales = localeCandidatesForCountry(countryCode);
+  let fallbackName = '';
+
+  for (const locale of locales) {
+    const shortName = getTimeZoneNamePart(epochMs, timeZone, 'short', locale);
+    if (!shortName) {
+      continue;
+    }
+
+    if (!fallbackName) {
+      fallbackName = shortName;
+    }
+
+    if (!isOffsetLikeZoneName(shortName)) {
+      return shortName;
+    }
+  }
+
+  return fallbackName;
+}
+
+function getCurrentZoneLabel(epochMs, timeZone, countryCode) {
+  const offset = normalizeOffsetLabel(getTimeZoneNamePart(epochMs, timeZone, 'shortOffset'));
+  const shortName = getPreferredShortZoneName(epochMs, timeZone, countryCode);
+  const normalizedShortName = normalizeOffsetLabel(shortName);
+
+  if (shortName && offset && normalizeText(offset) !== normalizeText(normalizedShortName)) {
+    return `${shortName} (${offset})`;
+  }
+
+  return offset || shortName || timeZone;
 }
 
 function getZonedParts(epochMs, timeZone) {
@@ -378,6 +465,10 @@ function renderCities() {
 
     row.querySelector('.city-name').textContent = `${city.name}, ${city.countryCode}`;
     row.querySelector('.city-meta').textContent = `${city.timeZone}`;
+    const zoneNow = row.querySelector('.city-zone-now');
+    if (zoneNow) {
+      zoneNow.textContent = getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode);
+    }
 
     const timeLine = getFormatter(city.timeZone, {
       hour: '2-digit',

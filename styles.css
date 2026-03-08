@@ -413,6 +413,12 @@ input[type='search'],
   margin-top: 0.2rem;
 }
 
+.city-zone-now {
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--muted) 72%, var(--accent-strong) 28%);
+}
+
 .time-line {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(1.65rem, 4vw, 2.2rem);
