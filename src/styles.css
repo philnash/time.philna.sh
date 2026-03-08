@@ -143,11 +143,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-.hero p {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-}
-
 .hero-actions {
   display: inline-flex;
   align-items: center;
@@ -382,12 +377,6 @@ input[type='search'],
   font-weight: 600;
 }
 
-.cities-header {
-  display: grid;
-  gap: 0.4rem;
-  margin-bottom: 0.65rem;
-}
-
 .share-link {
   display: grid;
   gap: 0.3rem;
@@ -495,10 +484,6 @@ input[type='search'],
 
 .share-message[data-state='success'] {
   color: var(--accent-strong);
-}
-
-.share-message[data-state='error'] {
-  color: var(--danger);
 }
 
 .sr-only {

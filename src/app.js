@@ -1,16 +1,30 @@
 const CITY_DATA_URL = '/data/cities.json';
 const ROUTE_PREFIX = '/compare';
+const ROUTE_SEGMENT = ROUTE_PREFIX.slice(1);
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
 const THEME_STORAGE_KEY = 'timetime-theme';
 const VALID_THEME_CHOICES = new Set(['system', 'light', 'dark']);
 const HEADER_ICON_DEFAULT = '/assets/icon.svg';
 const HEADER_ICON_LIGHT = '/assets/icon-light.svg';
+const MINUTES_PER_DAY = 1440;
+const SEARCH_RESULT_LIMIT = 12;
+const NO_CITIES_MESSAGE = 'No cities selected. Search and add a city to begin.';
+const TIME_LINE_FORMAT_OPTIONS = {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+};
+const DATE_LINE_FORMAT_OPTIONS = {
+  weekday: 'short',
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+};
 
 const state = {
   cities: [],
   dateTime: '',
-  source: 'init',
 };
 
 const refs = {
@@ -58,6 +72,16 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+}
+
+function buildCitySearchIndex(city) {
+  return normalizeText(
+    `${city.name} ${city.country} ${city.countryCode} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
+  );
+}
+
+function buildCitySearchLabel(city) {
+  return `${city.name}, ${city.countryCode} (${city.timeZone})`;
 }
 
 function getFormatter(timeZone, options, locale) {
@@ -312,8 +336,12 @@ function formatNowForTimeZone(timeZone) {
   return formatDateTimeLocalFromParts(getZonedParts(Date.now(), timeZone));
 }
 
+function normalizeDayMinutes(totalMinutes) {
+  return ((Math.floor(totalMinutes) % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+}
+
 function minutesToTimeString(totalMinutes) {
-  const normalized = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
+  const normalized = normalizeDayMinutes(totalMinutes);
   const hours = Math.floor(normalized / 60);
   const minutes = normalized % 60;
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
@@ -348,7 +376,7 @@ function navigateToPath(path, mode = 'push') {
 
 function parsePath(pathname) {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments.length < 2 || segments[0] !== ROUTE_PREFIX.replace('/', '')) {
+  if (segments.length < 2 || segments[0] !== ROUTE_SEGMENT) {
     return null;
   }
 
@@ -373,9 +401,21 @@ function parsePath(pathname) {
   return {
     cities: uniqueCities,
     dateTime,
-    source: 'url',
     pathIncludesDateTime,
   };
+}
+
+function stateFromPath(pathname) {
+  const parsed = parsePath(pathname);
+  if (parsed) {
+    return parsed;
+  }
+
+  if (pathname === '/') {
+    return buildDefaultState();
+  }
+
+  return null;
 }
 
 function updateMessage(text = '') {
@@ -507,17 +547,12 @@ function searchCities(query) {
   }
 
   const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const selected = new Set(state.cities);
 
   return cities
-    .filter((city) => {
-      const haystack = normalizeText(
-        `${city.name} ${city.country} ${city.countryCode} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
-      );
-
-      return tokens.every((token) => haystack.includes(token));
-    })
-    .filter((city) => !state.cities.includes(city.slug))
-    .slice(0, 12);
+    .filter((city) => !selected.has(city.slug))
+    .filter((city) => tokens.every((token) => city.searchIndex.includes(token)))
+    .slice(0, SEARCH_RESULT_LIMIT);
 }
 
 function renderSearchResults() {
@@ -528,37 +563,85 @@ function renderSearchResults() {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
   for (const city of searchResults) {
     const item = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.slug = city.slug;
-    button.textContent = `${city.name}, ${city.countryCode} (${city.timeZone})`;
+    button.textContent = city.searchLabel;
     item.appendChild(button);
-    refs.results.appendChild(item);
+    fragment.appendChild(item);
   }
 
+  refs.results.appendChild(fragment);
   refs.results.hidden = false;
 }
 
-function hideSearchResults() {
-  refs.results.hidden = true;
+function getCityDisplay(anchorMs, anchorTimeZone, city) {
+  const cityParts = getZonedParts(anchorMs, city.timeZone);
+  const cityMinutes = cityParts.hour * 60 + cityParts.minute;
+
+  return {
+    timeLine: getFormatter(city.timeZone, TIME_LINE_FORMAT_OPTIONS).format(new Date(anchorMs)),
+    dateLine: getFormatter(city.timeZone, DATE_LINE_FORMAT_OPTIONS).format(new Date(anchorMs)),
+    deltaLine: formatDayDelta(dayDelta(anchorMs, anchorTimeZone, city.timeZone)),
+    zoneLabel: getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode),
+    cityMinutes,
+  };
+}
+
+function updateCityRowTimeDetails(row, city, anchorMs, anchorTimeZone, activeSliderSlug = '') {
+  const display = getCityDisplay(anchorMs, anchorTimeZone, city);
+
+  row.querySelector('.time-line').textContent = display.timeLine;
+  row.querySelector('.date-line').textContent = display.dateLine;
+  row.querySelector('.delta-line').textContent = display.deltaLine;
+
+  const zoneNow = row.querySelector('.city-zone-now');
+  if (zoneNow) {
+    zoneNow.textContent = display.zoneLabel;
+  }
+
+  const timeSlider = row.querySelector('input[data-action="time-slider"]');
+  if (!timeSlider) {
+    return;
+  }
+
+  const rowSlug = row.dataset.slug || '';
+  const rawSliderMinutes = rowSlug === activeSliderSlug ? Number(timeSlider.value) : display.cityMinutes;
+  const sliderMinutes = Number.isFinite(rawSliderMinutes) ? rawSliderMinutes : display.cityMinutes;
+  timeSlider.setAttribute('aria-valuetext', minutesToTimeString(sliderMinutes));
+
+  if (rowSlug !== activeSliderSlug) {
+    timeSlider.value = String(display.cityMinutes);
+  }
+}
+
+function showEmptyCitiesState() {
+  if (refs.citiesPanel) {
+    refs.citiesPanel.hidden = true;
+  }
+
+  updateMessage(NO_CITIES_MESSAGE);
 }
 
 function renderCities() {
   refs.list.innerHTML = '';
 
   if (!state.cities.length) {
-    if (refs.citiesPanel) {
-      refs.citiesPanel.hidden = true;
-    }
-    updateMessage('No cities selected. Search and add a city to begin.');
+    showEmptyCitiesState();
     return;
   }
 
-  let renderedCities = 0;
   const anchor = citiesBySlug.get(state.cities[0]);
+  if (!anchor?.timeZone) {
+    showEmptyCitiesState();
+    return;
+  }
+
   const anchorMs = anchorLocalToEpoch(state.dateTime, anchor.timeZone);
+  const fragment = document.createDocumentFragment();
 
   for (const [index, slug] of state.cities.entries()) {
     const city = citiesBySlug.get(slug);
@@ -573,59 +656,35 @@ function renderCities() {
     }
 
     row.querySelector('.city-name').textContent = `${city.name}, ${city.countryCode}`;
-    row.querySelector('.city-meta').textContent = `${city.timeZone}`;
-    const zoneNow = row.querySelector('.city-zone-now');
-    if (zoneNow) {
-      zoneNow.textContent = getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode);
-    }
-    const cityParts = getZonedParts(anchorMs, city.timeZone);
-    const cityMinutes = cityParts.hour * 60 + cityParts.minute;
+    row.querySelector('.city-meta').textContent = city.timeZone;
+    updateCityRowTimeDetails(row, city, anchorMs, anchor.timeZone);
 
-    const timeLine = getFormatter(city.timeZone, {
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).format(new Date(anchorMs));
-
-    const dateLine = getFormatter(city.timeZone, {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(anchorMs));
-
-    const delta = dayDelta(anchorMs, anchor.timeZone, city.timeZone);
-
-    row.querySelector('.time-line').textContent = timeLine;
-    row.querySelector('.date-line').textContent = dateLine;
-    row.querySelector('.delta-line').textContent = formatDayDelta(delta);
     const timeSlider = row.querySelector('input[data-action="time-slider"]');
     if (timeSlider) {
-      timeSlider.value = String(cityMinutes);
       timeSlider.setAttribute('aria-label', `Set time using ${city.name}`);
-      timeSlider.setAttribute('aria-valuetext', minutesToTimeString(cityMinutes));
     }
 
     const up = row.querySelector('button[data-action="up"]');
     const down = row.querySelector('button[data-action="down"]');
-    if (index === 0) {
+    if (up && index === 0) {
       up.disabled = true;
     }
-    if (index === state.cities.length - 1) {
+    if (down && index === state.cities.length - 1) {
       down.disabled = true;
     }
 
-    refs.list.appendChild(row);
-    renderedCities += 1;
+    fragment.appendChild(row);
+  }
+
+  refs.list.appendChild(fragment);
+
+  if (!refs.list.children.length) {
+    showEmptyCitiesState();
+    return;
   }
 
   if (refs.citiesPanel) {
-    refs.citiesPanel.hidden = renderedCities === 0;
-  }
-
-  if (renderedCities === 0) {
-    updateMessage('No cities selected. Search and add a city to begin.');
-    return;
+    refs.citiesPanel.hidden = false;
   }
 
   updateMessage('');
@@ -634,7 +693,6 @@ function renderCities() {
 function applyState(nextState, historyMode = 'push') {
   state.cities = nextState.cities;
   state.dateTime = nextState.dateTime;
-  state.source = nextState.source || 'ui';
   if (typeof nextState.pathIncludesDateTime === 'boolean') {
     includeDateInUrl = nextState.pathIncludesDateTime;
   }
@@ -663,7 +721,6 @@ function buildDefaultState() {
   return {
     cities: [],
     dateTime: formatNowAsLocalInput(),
-    source: 'default',
     pathIncludesDateTime: true,
   };
 }
@@ -690,7 +747,7 @@ function moveCity(slug, direction) {
 
   const next = [...state.cities];
   [next[index], next[target]] = [next[target], next[index]];
-  applyState({ ...state, cities: next, source: 'ui' });
+  applyState({ ...state, cities: next });
 }
 
 function removeCity(slug) {
@@ -699,7 +756,7 @@ function removeCity(slug) {
   }
 
   const nextCities = state.cities.filter((citySlug) => citySlug !== slug);
-  applyState({ ...state, cities: nextCities, source: 'ui' });
+  applyState({ ...state, cities: nextCities });
 }
 
 function addCity(slug) {
@@ -708,7 +765,7 @@ function addCity(slug) {
   }
 
   const nextCities = [...state.cities, slug];
-  applyState({ ...state, cities: nextCities, source: 'ui' });
+  applyState({ ...state, cities: nextCities });
   refs.search.value = '';
   searchResults = [];
   renderSearchResults();
@@ -725,7 +782,7 @@ function buildAnchorDateTimeFromCitySlider(slug, totalMinutes) {
     return null;
   }
 
-  const normalizedMinutes = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
+  const normalizedMinutes = normalizeDayMinutes(totalMinutes);
   const anchorMs = anchorLocalToEpoch(state.dateTime, anchor.timeZone);
   const cityParts = getZonedParts(anchorMs, city.timeZone);
   const cityDatePart = `${cityParts.year}-${String(cityParts.month).padStart(2, '0')}-${String(cityParts.day).padStart(2, '0')}`;
@@ -741,13 +798,13 @@ function setTimeFromCitySlider(slug, totalMinutes, historyMode = 'replace') {
   }
 
   if (nextAnchorDateTime !== state.dateTime) {
-    applyState({ ...state, dateTime: nextAnchorDateTime, source: 'ui' }, historyMode);
+    applyState({ ...state, dateTime: nextAnchorDateTime }, historyMode);
   }
 }
 
 function renderRowsForAnchorDateTime(anchorDateTime, activeSliderSlug = '') {
   const anchor = citiesBySlug.get(state.cities[0]);
-  if (!anchor) {
+  if (!anchor?.timeZone) {
     return;
   }
 
@@ -760,43 +817,7 @@ function renderRowsForAnchorDateTime(anchorDateTime, activeSliderSlug = '') {
       continue;
     }
 
-    const timeLine = getFormatter(city.timeZone, {
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).format(new Date(anchorMs));
-
-    const dateLine = getFormatter(city.timeZone, {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(anchorMs));
-
-    const delta = dayDelta(anchorMs, anchor.timeZone, city.timeZone);
-
-    row.querySelector('.time-line').textContent = timeLine;
-    row.querySelector('.date-line').textContent = dateLine;
-    row.querySelector('.delta-line').textContent = formatDayDelta(delta);
-
-    const zoneNow = row.querySelector('.city-zone-now');
-    if (zoneNow) {
-      zoneNow.textContent = getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode);
-    }
-
-    const cityParts = getZonedParts(anchorMs, city.timeZone);
-    const cityMinutes = cityParts.hour * 60 + cityParts.minute;
-    const timeSlider = row.querySelector('input[data-action="time-slider"]');
-    if (!timeSlider) {
-      continue;
-    }
-
-    const sliderMinutes = rowSlug === activeSliderSlug ? Number(timeSlider.value) : cityMinutes;
-    timeSlider.setAttribute('aria-valuetext', minutesToTimeString(sliderMinutes));
-
-    if (rowSlug !== activeSliderSlug) {
-      timeSlider.value = String(cityMinutes);
-    }
+    updateCityRowTimeDetails(row, city, anchorMs, anchor.timeZone, activeSliderSlug);
   }
 }
 
@@ -842,7 +863,6 @@ function applyThemeChoice(choice, persist = true) {
         localStorage.setItem(THEME_STORAGE_KEY, themeChoice);
       }
     } catch {
-      // Ignore storage failures (for example private browsing restrictions).
     }
   }
 
@@ -880,7 +900,7 @@ function bindEvents() {
     refs.nowButton.addEventListener('click', () => {
       const next = nowForCurrentAnchor();
       if (next !== state.dateTime) {
-        applyState({ ...state, dateTime: next, source: 'ui' }, 'push');
+        applyState({ ...state, dateTime: next }, 'push');
       }
     });
   }
@@ -893,7 +913,7 @@ function bindEvents() {
       return;
     }
 
-    applyState({ ...state, dateTime: next, source: 'ui' }, 'push');
+    applyState({ ...state, dateTime: next }, 'push');
   });
 
   refs.search.addEventListener('input', () => {
@@ -910,7 +930,7 @@ function bindEvents() {
 
   refs.search.addEventListener('blur', () => {
     setTimeout(() => {
-      hideSearchResults();
+      refs.results.hidden = true;
     }, 120);
   });
 
@@ -1040,14 +1060,26 @@ function bindEvents() {
         return;
       }
 
-      const parsed = parsePath(destination.pathname);
-      if (!parsed) {
+      const nextState = stateFromPath(destination.pathname);
+      const isAppPath =
+        destination.pathname === '/' ||
+        destination.pathname === ROUTE_PREFIX ||
+        destination.pathname.startsWith(`${ROUTE_PREFIX}/`);
+
+      if (!nextState && !isAppPath) {
+        return;
+      }
+
+      if (event.canIntercept === false) {
         return;
       }
 
       event.intercept({
         handler: async () => {
-          applyState(parsed, 'none');
+          applyState(nextState || buildDefaultState(), 'none');
+          if (destination.pathname !== serializePath(state)) {
+            replacePathFromState();
+          }
         },
       });
     });
@@ -1055,15 +1087,11 @@ function bindEvents() {
   }
 
   window.addEventListener('popstate', () => {
-    const parsed = parsePath(location.pathname);
-    if (parsed) {
-      applyState(parsed, 'none');
-      return;
+    const nextState = stateFromPath(location.pathname) || buildDefaultState();
+    applyState(nextState, 'none');
+    if (location.pathname !== serializePath(state)) {
+      replacePathFromState();
     }
-
-    const defaultState = buildDefaultState();
-    applyState(defaultState, 'none');
-    replacePathFromState();
   });
 }
 
@@ -1083,28 +1111,26 @@ async function init() {
   initTheme();
 
   const response = await fetch(CITY_DATA_URL);
-  cities = await response.json();
+  if (!response.ok) {
+    throw new Error(`Failed to load city data (${response.status})`);
+  }
+
+  const cityData = await response.json();
+  cities = cityData.map((city) => ({
+    ...city,
+    searchIndex: buildCitySearchIndex(city),
+    searchLabel: buildCitySearchLabel(city),
+  }));
   for (const city of cities) {
     citiesBySlug.set(city.slug, city);
   }
 
-  const parsedFromPath = parsePath(location.pathname);
-  const defaultState = buildDefaultState();
-
-  applyState(
-    {
-      cities: parsedFromPath?.cities || defaultState.cities,
-      dateTime: parsedFromPath?.dateTime || defaultState.dateTime,
-      source: parsedFromPath ? 'url' : defaultState.source,
-      pathIncludesDateTime: parsedFromPath?.pathIncludesDateTime ?? defaultState.pathIncludesDateTime,
-    },
-    'none',
-  );
+  const initialState = stateFromPath(location.pathname) || buildDefaultState();
+  applyState(initialState, 'none');
 
   setSharePanelOpen(false);
 
-  const canonicalPath = serializePath(state);
-  if (location.pathname !== canonicalPath) {
+  if (location.pathname !== serializePath(state)) {
     replacePathFromState();
   }
 

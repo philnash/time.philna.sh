@@ -39,14 +39,14 @@ Example URL:
 ## Project Structure
 
 - `index.html` — app shell
-- `styles.css` — responsive and theme-aware styling
-- `app.js` — state management, search, URL sync, time conversion, rendering
-- `sw.js` — service worker for precache and offline handling
-- `manifest.webmanifest` — PWA metadata
-- `assets/icon.svg` — app icon
-- `data/cities.json` — generated city-to-time-zone dataset
+- `src/styles.css` — responsive and theme-aware styling
+- `src/app.js` — state management, search, URL sync, time conversion, rendering
+- `public/sw.js` — service worker for precache and offline handling
+- `public/manifest.webmanifest` — PWA metadata
+- `public/assets/icon.svg` — app icon
+- `public/data/cities.json` — generated city-to-time-zone dataset
 - `scripts/build-cities.js` — dataset generation script
-- `server.js` — local static server with SPA path fallback for `/compare/...`
+- `vite.config.mjs` — local dev/preview server config
 
 ## Requirements
 
@@ -67,10 +67,10 @@ npm install
 npm run build:cities
 ```
 
-3. Start the local server:
+3. Start the local dev server:
 
 ```bash
-npm start
+npm run dev
 ```
 
 4. Open in your browser:
@@ -83,9 +83,11 @@ You can also open a deep link directly, for example:
 
 ## NPM Scripts
 
-- `npm start` — run local server on `127.0.0.1:8080`
-- `npm run build:cities` — rebuild `data/cities.json`
-- `npm run build:worldmap` — regenerate background world-map SVG assets
+- `npm run dev` — run Vite dev server on `127.0.0.1:8080`
+- `npm run build` — produce a minified production build in `dist/`
+- `npm run preview` — preview the production build on `127.0.0.1:8080`
+- `npm run start` — alias for `npm run dev`
+- `npm run build:cities` — rebuild `public/data/cities.json`
 - `npm test` — syntax checks for key JS files
 
 ## Browser Support
@@ -109,7 +111,7 @@ Slug format is readable and stable (for example, `new-york-us`, `melbourne-au`),
 
 ## Troubleshooting
 
-- If deep links do not load correctly, ensure you are using `npm start` (the included server supports SPA route fallback).
+- If deep links do not load correctly, ensure you are using `npm run dev` or `npm run preview` so Vite handles SPA route fallback.
 - If city data looks stale after updates, rerun:
 
 ```bash

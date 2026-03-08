@@ -69,6 +69,6 @@ const output = rows.map((row) => {
   };
 });
 
-const outPath = path.join(__dirname, '..', 'data', 'cities.json');
+const outPath = path.join(__dirname, '..', 'public', 'data', 'cities.json');
 fs.writeFileSync(outPath, JSON.stringify(output));
 console.log(`Wrote ${output.length} cities to ${outPath}`);

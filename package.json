@@ -2,12 +2,13 @@
   "name": "timetime.zone",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "npm run dev",
     "build:cities": "node scripts/build-cities.js",
-    "build:worldmap": "node scripts/build-world-map.mjs",
-    "start": "node server.js",
-    "test": "node --check app.js && node --check sw.js && node --check server.js"
+    "test": "node --check src/app.js && node --check public/sw.js && node --check scripts/build-cities.js && node --check vite.config.mjs"
   },
   "keywords": [],
   "author": "",
@@ -18,5 +19,8 @@
     "d3-geo": "^3.1.1",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1"
   }
 }
