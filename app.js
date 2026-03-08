@@ -17,6 +17,7 @@ const refs = {
   datetime: document.getElementById('datetime'),
   search: document.getElementById('city-search'),
   results: document.getElementById('search-results'),
+  citiesPanel: document.getElementById('cities-panel'),
   list: document.getElementById('cities'),
   template: document.getElementById('city-row-template'),
   message: document.getElementById('message'),
@@ -548,10 +549,14 @@ function renderCities() {
   refs.list.innerHTML = '';
 
   if (!state.cities.length) {
+    if (refs.citiesPanel) {
+      refs.citiesPanel.hidden = true;
+    }
     updateMessage('No cities selected. Search and add a city to begin.');
     return;
   }
 
+  let renderedCities = 0;
   const anchor = citiesBySlug.get(state.cities[0]);
   const anchorMs = anchorLocalToEpoch(state.dateTime, anchor.timeZone);
 
@@ -611,6 +616,16 @@ function renderCities() {
     }
 
     refs.list.appendChild(row);
+    renderedCities += 1;
+  }
+
+  if (refs.citiesPanel) {
+    refs.citiesPanel.hidden = renderedCities === 0;
+  }
+
+  if (renderedCities === 0) {
+    updateMessage('No cities selected. Search and add a city to begin.');
+    return;
   }
 
   updateMessage('');

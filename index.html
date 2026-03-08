@@ -33,69 +33,6 @@
           </div>
         </div>
         <div class="hero-actions">
-          <button
-            id="share-toggle"
-            class="share-toggle"
-            type="button"
-            aria-expanded="false"
-            aria-controls="share-panel"
-            aria-label="Toggle share options"
-          >
-            <svg
-              class="share-icon share-icon-share"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <circle
-                cx="18"
-                cy="5"
-                r="2.2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <circle
-                cx="6"
-                cy="12"
-                r="2.2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <circle
-                cx="18"
-                cy="19"
-                r="2.2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              />
-              <path
-                d="M8.1 11l7.8-4.5M8.1 13l7.8 4.5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-            <svg
-              class="share-icon share-icon-close"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <path
-                d="M6 6l12 12M18 6L6 18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-              />
-            </svg>
-            <span class="sr-only">Share</span>
-          </button>
-
           <div class="theme-toggle" role="group" aria-label="Theme mode">
             <button
               type="button"
@@ -163,6 +100,70 @@
               <span class="sr-only">Dark</span>
             </button>
           </div>
+
+                    <button
+            id="share-toggle"
+            class="share-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="share-panel"
+            aria-label="Toggle share options"
+          >
+            <svg
+              class="share-icon share-icon-share"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle
+                cx="18"
+                cy="5"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle
+                cx="6"
+                cy="12"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle
+                cx="18"
+                cy="19"
+                r="2.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M8.1 11l7.8-4.5M8.1 13l7.8 4.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <svg
+              class="share-icon share-icon-close"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="sr-only">Share</span>
+          </button>
+
         </div>
       </header>
 
@@ -239,7 +240,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section id="cities-panel" class="panel" hidden>
         <ol id="cities" class="cities" aria-live="polite"></ol>
       </section>
 
@@ -316,6 +317,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=20"></script>
+    <script type="module" src="/app.js?v=21"></script>
   </body>
 </html>
