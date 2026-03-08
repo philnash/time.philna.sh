@@ -36,6 +36,7 @@ const refs = {
   template: document.getElementById('city-row-template'),
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
+  shareLinkRow: document.querySelector('.share-link-row'),
   copyLink: document.getElementById('copy-link'),
   shareMessage: document.getElementById('share-message'),
   nowButton: document.getElementById('set-now'),
@@ -61,6 +62,8 @@ const hasNavigationApi =
   typeof window !== 'undefined' &&
   typeof window.navigation === 'object' &&
   typeof window.navigation.navigate === 'function';
+const hasClipboardApi =
+  typeof window !== 'undefined' && window.isSecureContext && !!navigator.clipboard?.writeText;
 const systemThemeQuery =
   typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-color-scheme: dark)')
@@ -626,6 +629,17 @@ function showEmptyCitiesState() {
   updateMessage(NO_CITIES_MESSAGE);
 }
 
+function updateClipboardUi() {
+  if (!refs.copyLink) {
+    return;
+  }
+
+  refs.copyLink.hidden = !hasClipboardApi;
+  if (refs.shareLinkRow) {
+    refs.shareLinkRow.classList.toggle('no-copy', !hasClipboardApi);
+  }
+}
+
 function renderCities() {
   refs.list.innerHTML = '';
 
@@ -884,14 +898,16 @@ function initTheme() {
 
 async function copyShareLink() {
   const url = refs.routePreview.value;
+
   try {
     await navigator.clipboard.writeText(url);
     showShareMessage('Link copied to clipboard.', 'success');
-  } catch {
-    refs.routePreview.focus();
-    refs.routePreview.select();
-    const copied = document.execCommand && document.execCommand('copy');
-    showShareMessage(copied ? 'Link copied to clipboard.' : 'Unable to copy link.', copied ? 'success' : 'error');
+  } catch (error) {
+    const message =
+      error instanceof DOMException && error.name === 'NotAllowedError'
+        ? 'Clipboard permission denied.'
+        : 'Unable to copy link.';
+    showShareMessage(message, 'error');
   }
 }
 
@@ -1011,9 +1027,11 @@ function bindEvents() {
     }
   });
 
-  refs.copyLink.addEventListener('click', () => {
-    copyShareLink();
-  });
+  if (refs.copyLink && hasClipboardApi) {
+    refs.copyLink.addEventListener('click', () => {
+      copyShareLink();
+    });
+  }
 
   if (refs.shareToggle) {
     refs.shareToggle.addEventListener('click', () => {
@@ -1128,6 +1146,7 @@ async function init() {
   const initialState = stateFromPath(location.pathname) || buildDefaultState();
   applyState(initialState, 'none');
 
+  updateClipboardUi();
   setSharePanelOpen(false);
 
   if (location.pathname !== serializePath(state)) {

@@ -439,6 +439,11 @@ input[type='search'],
   gap: 0.45rem;
 }
 
+.share-link-row.no-copy {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
 .route-preview-input {
   font-size: 0.85rem;
   color: var(--muted);
