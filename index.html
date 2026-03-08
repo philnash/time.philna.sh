@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=10" />
+    <link rel="stylesheet" href="/styles.css?v=15" />
     <title>TimeTime Zone</title>
   </head>
   <body>
@@ -57,14 +57,6 @@
       </section>
 
       <section class="panel">
-        <div id="time-scrubber" class="time-scrubber" hidden>
-          <label id="time-slider-label" for="time-slider">Time</label>
-          <div class="time-scrubber-row">
-            <input id="time-slider" name="time-slider" type="range" min="0" max="1439" step="5" />
-            <output id="time-slider-value" for="time-slider">00:00</output>
-          </div>
-        </div>
-
         <div class="cities-header">
           <h2>Compared Cities</h2>
           <div class="share-link">
@@ -98,6 +90,23 @@
             <p class="time-line"></p>
             <p class="date-line"></p>
             <p class="delta-line"></p>
+            <div class="city-time-scrubber">
+              <input
+                class="city-time-slider"
+                data-action="time-slider"
+                type="range"
+                min="0"
+                max="1439"
+                step="5"
+              />
+              <div class="city-time-scale" aria-hidden="true">
+                <span>00</span>
+                <span>06</span>
+                <span>12</span>
+                <span>18</span>
+                <span>24</span>
+              </div>
+            </div>
           </div>
           <div class="city-actions">
             <button type="button" data-action="up" aria-label="Move city up">↑</button>
@@ -114,6 +123,6 @@
       </li>
     </template>
 
-    <script type="module" src="/app.js?v=8"></script>
+    <script type="module" src="/app.js?v=12"></script>
   </body>
 </html>

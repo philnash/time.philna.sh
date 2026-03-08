@@ -23,10 +23,6 @@ const refs = {
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
   brandIcon: document.querySelector('.brand-icon'),
-  timeScrubber: document.getElementById('time-scrubber'),
-  timeSlider: document.getElementById('time-slider'),
-  timeSliderValue: document.getElementById('time-slider-value'),
-  timeSliderLabel: document.getElementById('time-slider-label'),
   themeToggle: document.querySelector('.theme-toggle'),
 };
 
@@ -293,29 +289,15 @@ function formatNowAsLocalInput() {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+function formatDateTimeLocalFromParts(parts) {
+  return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}T${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
+}
+
 function minutesToTimeString(totalMinutes) {
   const normalized = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
   const hours = Math.floor(normalized / 60);
   const minutes = normalized % 60;
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-}
-
-function dateTimeToMinutes(dateTime) {
-  const parts = parseDateTimeLocal(dateTime);
-  if (!parts) {
-    return 0;
-  }
-
-  return parts.hour * 60 + parts.minute;
-}
-
-function withTimeMinutes(dateTime, totalMinutes) {
-  if (!DATETIME_PATTERN.test(dateTime)) {
-    return dateTime;
-  }
-
-  const [datePart] = dateTime.split('T');
-  return `${datePart}T${minutesToTimeString(totalMinutes)}`;
 }
 
 function serializePath(current) {
@@ -375,24 +357,6 @@ function updateMessage(text = '') {
 
 function updateRoutePreview() {
   refs.routePreview.value = `${location.origin}${serializePath(state)}`;
-}
-
-function updateTimeScrubber() {
-  const hasCities = state.cities.length > 0;
-  refs.timeScrubber.hidden = !hasCities;
-
-  if (!hasCities) {
-    return;
-  }
-
-  const anchorCity = citiesBySlug.get(state.cities[0]);
-  refs.timeSliderLabel.textContent = `Time ${anchorCity?.name ? `(${anchorCity.name})` : ''}`;
-
-  const minutes = dateTimeToMinutes(state.dateTime);
-  refs.timeSlider.value = String(minutes);
-  const label = minutesToTimeString(minutes);
-  refs.timeSliderValue.value = label;
-  refs.timeSliderValue.textContent = label;
 }
 
 function searchCities(query) {
@@ -469,6 +433,8 @@ function renderCities() {
     if (zoneNow) {
       zoneNow.textContent = getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode);
     }
+    const cityParts = getZonedParts(anchorMs, city.timeZone);
+    const cityMinutes = cityParts.hour * 60 + cityParts.minute;
 
     const timeLine = getFormatter(city.timeZone, {
       hour: '2-digit',
@@ -488,6 +454,12 @@ function renderCities() {
     row.querySelector('.time-line').textContent = timeLine;
     row.querySelector('.date-line').textContent = dateLine;
     row.querySelector('.delta-line').textContent = formatDayDelta(delta);
+    const timeSlider = row.querySelector('input[data-action="time-slider"]');
+    if (timeSlider) {
+      timeSlider.value = String(cityMinutes);
+      timeSlider.setAttribute('aria-label', `Set time using ${city.name}`);
+      timeSlider.setAttribute('aria-valuetext', minutesToTimeString(cityMinutes));
+    }
 
     const up = row.querySelector('button[data-action="up"]');
     const down = row.querySelector('button[data-action="down"]');
@@ -511,7 +483,6 @@ function applyState(nextState, historyMode = 'push') {
 
   refs.datetime.value = state.dateTime;
   renderCities();
-  updateTimeScrubber();
   updateRoutePreview();
 
   const nextPath = serializePath(state);
@@ -570,6 +541,92 @@ function addCity(slug) {
   refs.search.value = '';
   searchResults = [];
   renderSearchResults();
+}
+
+function buildAnchorDateTimeFromCitySlider(slug, totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) {
+    return null;
+  }
+
+  const anchor = citiesBySlug.get(state.cities[0]);
+  const city = citiesBySlug.get(slug);
+  if (!anchor || !city) {
+    return null;
+  }
+
+  const normalizedMinutes = ((Math.floor(totalMinutes) % 1440) + 1440) % 1440;
+  const anchorMs = anchorLocalToEpoch(state.dateTime, anchor.timeZone);
+  const cityParts = getZonedParts(anchorMs, city.timeZone);
+  const cityDatePart = `${cityParts.year}-${String(cityParts.month).padStart(2, '0')}-${String(cityParts.day).padStart(2, '0')}`;
+  const nextCityDateTime = `${cityDatePart}T${minutesToTimeString(normalizedMinutes)}`;
+  const nextEpoch = anchorLocalToEpoch(nextCityDateTime, city.timeZone);
+  return formatDateTimeLocalFromParts(getZonedParts(nextEpoch, anchor.timeZone));
+}
+
+function setTimeFromCitySlider(slug, totalMinutes, historyMode = 'replace') {
+  const nextAnchorDateTime = buildAnchorDateTimeFromCitySlider(slug, totalMinutes);
+  if (!nextAnchorDateTime) {
+    return;
+  }
+
+  if (nextAnchorDateTime !== state.dateTime) {
+    applyState({ ...state, dateTime: nextAnchorDateTime, source: 'ui' }, historyMode);
+  }
+}
+
+function renderRowsForAnchorDateTime(anchorDateTime, activeSliderSlug = '') {
+  const anchor = citiesBySlug.get(state.cities[0]);
+  if (!anchor) {
+    return;
+  }
+
+  const anchorMs = anchorLocalToEpoch(anchorDateTime, anchor.timeZone);
+  const rows = refs.list.querySelectorAll('.city-row');
+  for (const row of rows) {
+    const rowSlug = row.dataset.slug;
+    const city = citiesBySlug.get(rowSlug);
+    if (!city) {
+      continue;
+    }
+
+    const timeLine = getFormatter(city.timeZone, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(new Date(anchorMs));
+
+    const dateLine = getFormatter(city.timeZone, {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(anchorMs));
+
+    const delta = dayDelta(anchorMs, anchor.timeZone, city.timeZone);
+
+    row.querySelector('.time-line').textContent = timeLine;
+    row.querySelector('.date-line').textContent = dateLine;
+    row.querySelector('.delta-line').textContent = formatDayDelta(delta);
+
+    const zoneNow = row.querySelector('.city-zone-now');
+    if (zoneNow) {
+      zoneNow.textContent = getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode);
+    }
+
+    const cityParts = getZonedParts(anchorMs, city.timeZone);
+    const cityMinutes = cityParts.hour * 60 + cityParts.minute;
+    const timeSlider = row.querySelector('input[data-action="time-slider"]');
+    if (!timeSlider) {
+      continue;
+    }
+
+    const sliderMinutes = rowSlug === activeSliderSlug ? Number(timeSlider.value) : cityMinutes;
+    timeSlider.setAttribute('aria-valuetext', minutesToTimeString(sliderMinutes));
+
+    if (rowSlug !== activeSliderSlug) {
+      timeSlider.value = String(cityMinutes);
+    }
+  }
 }
 
 function updateThemeButtons() {
@@ -659,17 +716,6 @@ function bindEvents() {
     applyState({ ...state, dateTime: next, source: 'ui' }, 'push');
   });
 
-  refs.timeSlider.addEventListener('input', () => {
-    if (!state.cities.length) {
-      return;
-    }
-
-    const next = withTimeMinutes(state.dateTime, Number(refs.timeSlider.value));
-    if (next !== state.dateTime) {
-      applyState({ ...state, dateTime: next, source: 'ui' }, 'replace');
-    }
-  });
-
   refs.search.addEventListener('input', () => {
     searchResults = searchCities(refs.search.value);
     renderSearchResults();
@@ -699,6 +745,43 @@ function bindEvents() {
     }
 
     addCity(button.dataset.slug);
+  });
+
+  refs.list.addEventListener('input', (event) => {
+    const timeSlider = event.target.closest('input[data-action="time-slider"]');
+    if (!timeSlider) {
+      return;
+    }
+
+    const row = timeSlider.closest('.city-row');
+    if (!row || !row.dataset.slug) {
+      return;
+    }
+
+    const minutes = Number(timeSlider.value);
+    timeSlider.setAttribute('aria-valuetext', minutesToTimeString(minutes));
+
+    const previewAnchorDateTime = buildAnchorDateTimeFromCitySlider(row.dataset.slug, minutes);
+    if (!previewAnchorDateTime) {
+      return;
+    }
+
+    refs.datetime.value = previewAnchorDateTime;
+    renderRowsForAnchorDateTime(previewAnchorDateTime, row.dataset.slug);
+  });
+
+  refs.list.addEventListener('change', (event) => {
+    const timeSlider = event.target.closest('input[data-action="time-slider"]');
+    if (!timeSlider) {
+      return;
+    }
+
+    const row = timeSlider.closest('.city-row');
+    if (!row || !row.dataset.slug) {
+      return;
+    }
+
+    setTimeFromCitySlider(row.dataset.slug, Number(timeSlider.value), 'replace');
   });
 
   refs.list.addEventListener('click', (event) => {

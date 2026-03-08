@@ -17,7 +17,7 @@ It lets you compare local time across cities worldwide, pick a custom date/time,
 - Mobile-friendly responsive UI
 - Respects system light/dark mode (`prefers-color-scheme`)
 - Theme switch (System / Light / Dark), defaulting to system
-- Anchor-time slider for quick time scrubbing (plus datetime input for precise edits)
+- Per-city time sliders so you can scrub from any city (plus datetime input for precise edits)
 
 ## How It Works
 
