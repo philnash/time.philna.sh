@@ -140,10 +140,19 @@ body {
   border-radius: 9px;
   background: transparent;
   color: var(--muted);
-  padding: 0.35rem 0.6rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.35rem;
+  display: inline-grid;
+  place-items: center;
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.theme-toggle button svg {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .theme-toggle button.is-active {
@@ -425,7 +434,15 @@ input[type='search'],
 }
 
 .city-actions button[data-action='remove'] {
-  color: color-mix(in srgb, var(--danger) 75%, var(--text));
+  color: var(--text);
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+}
+
+.city-actions button[data-action='remove'] svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .city-actions button:hover,

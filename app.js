@@ -292,7 +292,7 @@ function updateTimeScrubber() {
   }
 
   const anchorCity = citiesBySlug.get(state.cities[0]);
-  refs.timeSliderLabel.textContent = `Anchor Time (${anchorCity?.name || 'Anchor'})`;
+  refs.timeSliderLabel.textContent = `Time ${anchorCity?.name ? `(${anchorCity.name})` : ''}`;
 
   const minutes = dateTimeToMinutes(state.dateTime);
   refs.timeSlider.value = String(minutes);
@@ -369,7 +369,7 @@ function renderCities() {
       row.classList.add('anchor');
     }
 
-    row.querySelector('.city-name').textContent = `${city.name}, ${city.countryCode}${index === 0 ? ' (Anchor)' : ''}`;
+    row.querySelector('.city-name').textContent = `${city.name}, ${city.countryCode}`;
     row.querySelector('.city-meta').textContent = `${city.timeZone}`;
 
     const timeLine = getFormatter(city.timeZone, {

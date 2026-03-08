@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=7" />
+    <link rel="stylesheet" href="/styles.css?v=9" />
     <title>TimeTime Zone</title>
   </head>
   <body>
@@ -18,9 +18,26 @@
           <p>Compare time across cities instantly.</p>
         </div>
         <div class="theme-toggle" role="group" aria-label="Theme mode">
-          <button type="button" data-theme-choice="system" aria-pressed="true">System</button>
-          <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
-          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+          <button type="button" data-theme-choice="system" aria-label="System theme" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 5h16v11H4z" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M9 19h6M12 16v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <span class="sr-only">System</span>
+          </button>
+          <button type="button" data-theme-choice="light" aria-label="Light theme" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <span class="sr-only">Light</span>
+          </button>
+          <button type="button" data-theme-choice="dark" aria-label="Dark theme" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M14.5 3.2a8.5 8.5 0 1 0 6.3 13.6A8.8 8.8 0 0 1 14.5 3.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+            <span class="sr-only">Dark</span>
+          </button>
         </div>
       </header>
 
@@ -82,7 +99,13 @@
           <div class="city-actions">
             <button type="button" data-action="up" aria-label="Move city up">↑</button>
             <button type="button" data-action="down" aria-label="Move city down">↓</button>
-            <button type="button" data-action="remove" aria-label="Remove city">Remove</button>
+            <button type="button" data-action="remove" aria-label="Remove city">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span class="sr-only">Remove city</span>
+            </button>
           </div>
         </article>
       </li>
