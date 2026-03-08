@@ -1,9 +1,9 @@
-const CACHE_NAME = 'timetime-zone-v39';
+const CACHE_NAME = 'timetime-zone-v40';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/styles.css?v=25',
-  '/app.js?v=17',
+  '/styles.css?v=26',
+  '/app.js?v=18',
   '/data/cities.json',
   '/manifest.webmanifest',
   '/assets/icon.svg',

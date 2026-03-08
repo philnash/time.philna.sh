@@ -205,6 +205,22 @@ body {
 
 .controls-actions {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.now-button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft) 16%);
+  color: var(--text);
+  height: 42px;
+  padding: 0 0.9rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
 }
 
 .share-toggle {
@@ -221,7 +237,9 @@ body {
 }
 
 .share-toggle:hover,
-.share-toggle:focus-visible {
+.share-toggle:focus-visible,
+.now-button:hover,
+.now-button:focus-visible {
   border-color: var(--accent);
   color: var(--accent);
   outline: none;
@@ -584,7 +602,7 @@ input[type='search'],
 
   .controls-actions {
     grid-column: 1 / -1;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
   .city-row article {

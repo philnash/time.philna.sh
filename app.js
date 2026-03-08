@@ -22,6 +22,7 @@ const refs = {
   message: document.getElementById('message'),
   routePreview: document.getElementById('route-preview'),
   copyLink: document.getElementById('copy-link'),
+  nowButton: document.getElementById('set-now'),
   includeDateInLink: document.getElementById('share-include-datetime'),
   shareToggle: document.getElementById('share-toggle'),
   sharePanel: document.getElementById('share-panel'),
@@ -595,6 +596,15 @@ function buildDefaultState() {
   };
 }
 
+function nowForCurrentAnchor() {
+  const anchor = citiesBySlug.get(state.cities[0]);
+  if (!anchor?.timeZone) {
+    return formatNowAsLocalInput();
+  }
+
+  return formatNowForTimeZone(anchor.timeZone);
+}
+
 function moveCity(slug, direction) {
   const index = state.cities.indexOf(slug);
   if (index === -1) {
@@ -794,6 +804,15 @@ async function copyShareLink() {
 }
 
 function bindEvents() {
+  if (refs.nowButton) {
+    refs.nowButton.addEventListener('click', () => {
+      const next = nowForCurrentAnchor();
+      if (next !== state.dateTime) {
+        applyState({ ...state, dateTime: next, source: 'ui' }, 'push');
+      }
+    });
+  }
+
   refs.datetime.addEventListener('change', () => {
     const next = refs.datetime.value;
     if (!DATETIME_PATTERN.test(next)) {
