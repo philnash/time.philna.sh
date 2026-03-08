@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=26" />
+    <link rel="stylesheet" href="/styles.css?v=27" />
     <title>TimeTime Zone</title>
   </head>
   <body>
@@ -56,7 +56,7 @@
         </div>
 
         <div class="controls-actions">
-          <button id="set-now" class="now-button" type="button">Now</button>
+          <button id="set-now" class="now-button" type="button">now</button>
           <button
             id="share-toggle"
             class="share-toggle"
@@ -103,6 +103,12 @@
       </section>
 
       <p id="message" class="message" role="status" aria-live="polite"></p>
+
+      <footer class="panel app-footer">
+        <p>
+          Made by <a href="https://philna.sh">philnash</a>
+        </p>
+      </footer>
     </main>
 
     <template id="city-row-template">

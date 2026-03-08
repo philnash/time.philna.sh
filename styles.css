@@ -84,6 +84,8 @@
 body {
   margin: 0;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: 'Sora', 'Avenir Next', 'Segoe UI', sans-serif;
   color: var(--text);
   background-color: var(--bg);
@@ -106,8 +108,10 @@ body {
 
 .app-shell {
   width: min(1080px, calc(100% - 1.25rem));
-  margin: 1rem auto 2rem;
-  display: grid;
+  min-height: calc(100vh - 2rem);
+  margin: 1rem auto;
+  display: flex;
+  flex-direction: column;
   gap: 0.9rem;
 }
 
@@ -592,6 +596,26 @@ input[type='search'],
   margin: 0;
   color: var(--muted);
   min-height: 1.2rem;
+}
+
+.app-footer {
+  margin-top: auto;
+  text-align: center;
+}
+
+.app-footer p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.app-footer a {
+  color: var(--accent-strong);
+  text-underline-offset: 0.14em;
+}
+
+.app-footer a:hover,
+.app-footer a:focus-visible {
+  color: var(--accent);
 }
 
 @media (min-width: 760px) {
