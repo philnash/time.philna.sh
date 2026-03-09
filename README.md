@@ -47,10 +47,12 @@ Example URL:
 - `public/data/cities.json` — generated city-to-time-zone dataset
 - `scripts/build-cities.js` — dataset generation script
 - `vite.config.mjs` — local dev/preview server config
+- `playwright.config.js` — end-to-end test configuration
+- `tests/e2e/` — Playwright end-to-end test suite
 
 ## Requirements
 
-- Node.js 20+ (tested with Node 22)
+- Node.js 24.x
 - npm
 
 ## Run Locally
@@ -89,6 +91,27 @@ You can also open a deep link directly, for example:
 - `npm run start` — alias for `npm run dev`
 - `npm run build:cities` — rebuild `public/data/cities.json`
 - `npm test` — syntax checks for key JS files
+- `npm run test:e2e` — run Playwright end-to-end tests (production preview mode)
+- `npm run test:e2e:headed` — run Playwright tests with a visible browser
+- `npm run test:e2e:ui` — open Playwright UI mode
+
+## End-to-End Testing
+
+Playwright E2E tests run against a production-like server (`vite build` + `vite preview`), not the Vite dev server.
+
+Install Playwright browser binaries:
+
+```bash
+npx playwright install chromium
+```
+
+Run E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+CI runs the same suite in GitHub Actions on pull requests and pushes to `main` via `.github/workflows/e2e.yml`.
 
 ## Browser Support
 
