@@ -1,4 +1,4 @@
-# TimeTime Zone
+# Phil's Time
 
 A clean, modern, front-end-only time zone comparison app inspired by tools like SavvyTime.
 
