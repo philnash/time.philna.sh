@@ -12,6 +12,14 @@ function slugify(value) {
     .replace(/-{2,}/g, '-');
 }
 
+function normalizeForComparison(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 function uniqueSlug(baseParts, fallbackParts, seen) {
   const base = baseParts.filter(Boolean).join('-');
   if (!seen.has(base)) {
@@ -56,16 +64,17 @@ const output = rows.map((row) => {
   const tzSlug = slugify(row.timeZone.replace(/\//g, '-'));
 
   const slug = uniqueSlug([citySlug, countrySlug], [provinceSlug, tzSlug], seen);
-  const aliases = [row.city, row.cityAscii].filter((v, i, arr) => v && arr.indexOf(v) === i);
+  const aliases = [row.cityAscii]
+    .filter(Boolean)
+    .filter((alias) => normalizeForComparison(alias) !== normalizeForComparison(row.city))
+    .filter((value, index, values) => values.indexOf(value) === index);
 
   return {
     slug,
     name: row.city,
     country: row.country,
-    countryCode: row.countryCode,
     timeZone: row.timeZone,
-    aliases,
-    population: row.population,
+    ...(aliases.length ? { aliases } : {}),
   };
 });
 

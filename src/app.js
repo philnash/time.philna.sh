@@ -79,12 +79,12 @@ function normalizeText(value) {
 
 function buildCitySearchIndex(city) {
   return normalizeText(
-    `${city.name} ${city.country} ${city.countryCode} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
+    `${city.name} ${city.country} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
   );
 }
 
 function buildCitySearchLabel(city) {
-  return `${city.name}, ${city.countryCode} (${city.timeZone})`;
+  return `${city.name}, ${city.country} (${city.timeZone})`;
 }
 
 function getFormatter(timeZone, options, locale) {
@@ -135,12 +135,8 @@ function isOffsetLikeZoneName(label) {
   return /^(?:GMT|UTC)(?:[+-]\d{1,2}(?::?\d{2})?)?$/i.test(label.trim());
 }
 
-function localeCandidatesForCountry(countryCode) {
+function localeCandidates() {
   const list = [];
-
-  if (countryCode && /^[A-Z]{2}$/.test(countryCode)) {
-    list.push(`en-${countryCode}`);
-  }
 
   if (typeof navigator !== 'undefined' && Array.isArray(navigator.languages)) {
     for (const locale of navigator.languages) {
@@ -155,8 +151,8 @@ function localeCandidatesForCountry(countryCode) {
   return [...new Set(list)];
 }
 
-function getPreferredShortZoneName(epochMs, timeZone, countryCode) {
-  const locales = localeCandidatesForCountry(countryCode);
+function getPreferredShortZoneName(epochMs, timeZone) {
+  const locales = localeCandidates();
   let fallbackName = '';
 
   for (const locale of locales) {
@@ -177,9 +173,9 @@ function getPreferredShortZoneName(epochMs, timeZone, countryCode) {
   return fallbackName;
 }
 
-function getCurrentZoneLabel(epochMs, timeZone, countryCode) {
+function getCurrentZoneLabel(epochMs, timeZone) {
   const offset = normalizeOffsetLabel(getTimeZoneNamePart(epochMs, timeZone, 'shortOffset'));
-  const shortName = getPreferredShortZoneName(epochMs, timeZone, countryCode);
+  const shortName = getPreferredShortZoneName(epochMs, timeZone);
   const normalizedShortName = normalizeOffsetLabel(shortName);
 
   if (shortName && offset && normalizeText(offset) !== normalizeText(normalizedShortName)) {
@@ -589,7 +585,7 @@ function getCityDisplay(anchorMs, anchorTimeZone, city) {
     timeLine: getFormatter(city.timeZone, TIME_LINE_FORMAT_OPTIONS).format(new Date(anchorMs)),
     dateLine: getFormatter(city.timeZone, DATE_LINE_FORMAT_OPTIONS).format(new Date(anchorMs)),
     deltaLine: formatDayDelta(dayDelta(anchorMs, anchorTimeZone, city.timeZone)),
-    zoneLabel: getCurrentZoneLabel(anchorMs, city.timeZone, city.countryCode),
+    zoneLabel: getCurrentZoneLabel(anchorMs, city.timeZone),
     cityMinutes,
   };
 }
@@ -669,7 +665,16 @@ function renderCities() {
       row.classList.add('anchor');
     }
 
-    row.querySelector('.city-name').textContent = `${city.name}, ${city.countryCode}`;
+    const cityName = row.querySelector('.city-name');
+    if (cityName) {
+      cityName.textContent = city.name;
+      if (city.country) {
+        const country = document.createElement('span');
+        country.className = 'city-country';
+        country.textContent = city.country;
+        cityName.append(country);
+      }
+    }
     row.querySelector('.city-meta').textContent = city.timeZone;
     updateCityRowTimeDetails(row, city, anchorMs, anchor.timeZone);
 

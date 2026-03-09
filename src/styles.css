@@ -538,6 +538,15 @@ input[type='search'],
   line-height: 1;
 }
 
+.city-name .city-country {
+  color: var(--muted);
+  margin-inline-start: 0.22em;
+  font-size: 0.75em;
+  font-weight: 200;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .city-main p {
   color: var(--muted);
 }
