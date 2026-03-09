@@ -57,6 +57,7 @@ let sharePanelHideTimer = null;
 let sharePanelCloseTransitionHandler = null;
 let shareMessageHideTimer = null;
 let shareMessageClearTimer = null;
+let lastTrackedPath = '';
 
 const hasNavigationApi =
   typeof window !== 'undefined' &&
@@ -359,6 +360,24 @@ function serializePath(current, withDateTime = includeDateInUrl) {
   return `${basePath}/${toPathDateTime(current.dateTime)}`;
 }
 
+function trackPageView(pathname = location.pathname) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') {
+    return;
+  }
+
+  const nextPath = typeof pathname === 'string' && pathname ? pathname : '/';
+  if (nextPath === lastTrackedPath) {
+    return;
+  }
+
+  lastTrackedPath = nextPath;
+  window.gtag('event', 'page_view', {
+    page_title: document.title,
+    page_path: nextPath,
+    page_location: `${location.origin}${nextPath}`,
+  });
+}
+
 function navigateToPath(path, mode = 'push') {
   if (hasNavigationApi) {
     window.navigation.navigate(path, { history: mode });
@@ -367,10 +386,12 @@ function navigateToPath(path, mode = 'push') {
 
   if (mode === 'replace') {
     history.replaceState(null, '', path);
+    trackPageView(path);
     return;
   }
 
   history.pushState(null, '', path);
+  trackPageView(path);
 }
 
 function parsePath(pathname) {
@@ -1102,6 +1123,8 @@ function bindEvents() {
           applyState(nextState || buildDefaultState(), 'none');
           if (destination.pathname !== serializePath(state)) {
             replacePathFromState();
+          } else {
+            trackPageView(destination.pathname);
           }
         },
       });
@@ -1114,6 +1137,8 @@ function bindEvents() {
     applyState(nextState, 'none');
     if (location.pathname !== serializePath(state)) {
       replacePathFromState();
+    } else {
+      trackPageView(location.pathname);
     }
   });
 }
@@ -1156,6 +1181,8 @@ async function init() {
 
   if (location.pathname !== serializePath(state)) {
     replacePathFromState();
+  } else {
+    trackPageView(location.pathname);
   }
 
   bindEvents();
