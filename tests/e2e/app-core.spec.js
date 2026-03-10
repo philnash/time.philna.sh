@@ -137,6 +137,8 @@ test('controls layout stays stable across narrow and wide viewports', async ({ p
   const cases = [
     { width: 320, height: 844, searchBelowTopRow: true },
     { width: 390, height: 844, searchBelowTopRow: true },
+    { width: 600, height: 900, searchBelowTopRow: true },
+    { width: 800, height: 900, searchBelowTopRow: false },
     { width: 1280, height: 900, searchBelowTopRow: false },
   ];
 
@@ -155,6 +157,12 @@ test('controls layout stays stable across narrow and wide viewports', async ({ p
       const nowRect = rect(now);
       const searchRect = rect(search);
       const topRowBottom = Math.max(timeRect.bottom, dateRect.bottom, nowRect.bottom);
+      const overlapNowSearch = !(
+        nowRect.right <= searchRect.left ||
+        searchRect.right <= nowRect.left ||
+        nowRect.bottom <= searchRect.top ||
+        searchRect.bottom <= nowRect.top
+      );
 
       return {
         viewport: window.innerWidth,
@@ -166,6 +174,8 @@ test('controls layout stays stable across narrow and wide viewports', async ({ p
           Math.abs(timeRect.height - nowRect.height) < 2 &&
           Math.abs(dateRect.height - nowRect.height) < 2,
         searchBelowTopRow: searchRect.y > topRowBottom,
+        overlapNowSearch,
+        gapNowToSearch: searchRect.left - nowRect.right,
       };
     });
 
@@ -176,13 +186,19 @@ test('controls layout stays stable across narrow and wide viewports', async ({ p
     expect(layout.searchBelowTopRow, `search wrapping at ${testCase.width}`).toBe(
       testCase.searchBelowTopRow,
     );
+    expect(layout.overlapNowSearch, `search overlap at ${testCase.width}`).toBe(false);
+    if (!testCase.searchBelowTopRow) {
+      expect(layout.gapNowToSearch, `search gap at ${testCase.width}`).toBeGreaterThan(8);
+    }
   }
 });
 
-test('city row uses a compact layout on mobile widths', async ({ page }) => {
+test('city row uses a consistent compact layout across responsive widths', async ({ page }) => {
   const cases = [
-    { width: 320, height: 844, scaleHidden: true },
-    { width: 390, height: 844, scaleHidden: true },
+    { width: 320, height: 844, scaleHidden: false },
+    { width: 500, height: 900, scaleHidden: false },
+    { width: 600, height: 900, scaleHidden: false },
+    { width: 800, height: 900, scaleHidden: false },
     { width: 1280, height: 900, scaleHidden: false },
   ];
 
@@ -201,20 +217,23 @@ test('city row uses a compact layout on mobile widths', async ({ page }) => {
       const time = article.querySelector('.city-time');
       const scrubber = article.querySelector('.city-time-scrubber');
       const actions = article.querySelector('.city-actions');
+      const country = article.querySelector('.city-country');
       const scale = article.querySelector('.city-time-scale');
       const articleRect = article.getBoundingClientRect();
       const mainRect = main.getBoundingClientRect();
       const timeRect = time.getBoundingClientRect();
       const scrubberRect = scrubber.getBoundingClientRect();
       const actionsRect = actions.getBoundingClientRect();
+      const scrubberGap = actionsRect.left - scrubberRect.right;
 
       return {
         viewport: window.innerWidth,
         scrollWidth: document.documentElement.scrollWidth,
         scaleHidden: getComputedStyle(scale).display === 'none',
+        countryOnOwnLine: getComputedStyle(country).display === 'block',
         timeOnRight: timeRect.x >= mainRect.x + Math.min(mainRect.width * 0.55, 80),
         actionsBelowTime: actionsRect.y >= timeRect.bottom - 1,
-        scrubberNarrow: scrubberRect.width <= articleRect.width * 0.65,
+        scrubberFillsAvailableWidth: scrubberGap >= 8 && scrubberGap <= 18,
         scrubberOnLeft: scrubberRect.x < actionsRect.x,
         articleFitsViewport: Math.round(articleRect.right) <= window.innerWidth - 1,
       };
@@ -223,14 +242,12 @@ test('city row uses a compact layout on mobile widths', async ({ page }) => {
     expect(layout.viewport, `viewport width ${testCase.width}`).toBe(testCase.width);
     expect(layout.scrollWidth, `scroll width at ${testCase.width}`).toBe(testCase.width);
     expect(layout.scaleHidden, `time scale visibility at ${testCase.width}`).toBe(testCase.scaleHidden);
+    expect(layout.countryOnOwnLine, `country layout at ${testCase.width}`).toBe(true);
     expect(layout.articleFitsViewport, `article width at ${testCase.width}`).toBe(true);
-
-    if (testCase.scaleHidden) {
-      expect(layout.timeOnRight, `time position at ${testCase.width}`).toBe(true);
-      expect(layout.actionsBelowTime, `actions position at ${testCase.width}`).toBe(true);
-      expect(layout.scrubberNarrow, `scrubber width at ${testCase.width}`).toBe(true);
-      expect(layout.scrubberOnLeft, `scrubber position at ${testCase.width}`).toBe(true);
-    }
+    expect(layout.timeOnRight, `time position at ${testCase.width}`).toBe(true);
+    expect(layout.actionsBelowTime, `actions position at ${testCase.width}`).toBe(true);
+    expect(layout.scrubberFillsAvailableWidth, `scrubber width at ${testCase.width}`).toBe(true);
+    expect(layout.scrubberOnLeft, `scrubber position at ${testCase.width}`).toBe(true);
   }
 });
 
