@@ -1,6 +1,7 @@
 const { expect } = require('@playwright/test');
 
 const SEARCH_RESULTS = '#search-results';
+const SAVED_CITIES_STORAGE_KEY = 'time.philna.sh-cities';
 
 function cityRow(page, slug) {
   return page.locator(`#cities .city-row[data-slug="${slug}"]`);
@@ -65,6 +66,13 @@ async function getOrderedCitySlugs(page) {
   return page.locator('#cities .city-row').evaluateAll((rows) => rows.map((row) => row.dataset.slug || ''));
 }
 
+async function getSavedCitySlugs(page) {
+  return page.evaluate((storageKey) => {
+    const rawValue = window.localStorage.getItem(storageKey);
+    return rawValue ? JSON.parse(rawValue) : null;
+  }, SAVED_CITIES_STORAGE_KEY);
+}
+
 async function setSliderValue(page, slug, value, eventName) {
   const slider = cityRow(page, slug).locator('input[data-action="time-slider"]');
   await expect(slider).toBeVisible();
@@ -83,7 +91,9 @@ module.exports = {
   closeSharePanel,
   displayedDateTime,
   getOrderedCitySlugs,
+  getSavedCitySlugs,
   openSharePanel,
+  SAVED_CITIES_STORAGE_KEY,
   setDateTime,
   setSliderValue,
 };

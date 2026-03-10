@@ -4,7 +4,9 @@ const {
   cityRow,
   displayedDateTime,
   getOrderedCitySlugs,
+  getSavedCitySlugs,
   openSharePanel,
+  SAVED_CITIES_STORAGE_KEY,
   setDateTime,
   setSliderValue,
 } = require('./helpers');
@@ -21,6 +23,7 @@ test('initial load shows empty state and closed share panel', async ({ page }) =
   await expect(page.locator('#message')).toContainText('No cities selected');
   await expect(page.locator('#share-toggle')).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#share-panel')).toBeHidden();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/');
 });
 
 test('search and add city updates list and URL', async ({ page }) => {
@@ -30,6 +33,24 @@ test('search and add city updates list and URL', async ({ page }) => {
 
   await expect(page.locator('#cities .city-row')).toHaveCount(1);
   await expect(page).toHaveURL(new RegExp(`/compare/${MELBOURNE_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`));
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([MELBOURNE_SLUG]);
+});
+
+test('root restores saved cities from local storage and rewrites to compare path', async ({ page }) => {
+  await page.addInitScript(
+    ({ storageKey, citySlugs }) => {
+      window.localStorage.setItem(storageKey, JSON.stringify(citySlugs));
+    },
+    { storageKey: SAVED_CITIES_STORAGE_KEY, citySlugs: [MELBOURNE_SLUG, NEW_YORK_SLUG] },
+  );
+
+  await page.goto('/');
+
+  await expect.poll(() => getOrderedCitySlugs(page)).toEqual([MELBOURNE_SLUG, NEW_YORK_SLUG]);
+  await expect(page).toHaveURL(
+    new RegExp(`/compare/${MELBOURNE_SLUG}/${NEW_YORK_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`),
+  );
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([MELBOURNE_SLUG, NEW_YORK_SLUG]);
 });
 
 test('adding second city and reordering updates row order and URL', async ({ page }) => {
@@ -46,6 +67,7 @@ test('adding second city and reordering updates row order and URL', async ({ pag
   await expect(page).toHaveURL(
     new RegExp(`/compare/${NEW_YORK_SLUG}/${MELBOURNE_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`),
   );
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([NEW_YORK_SLUG, MELBOURNE_SLUG]);
 });
 
 test('removing cities updates URL and returns to root when all are removed', async ({ page }) => {
@@ -58,10 +80,43 @@ test('removing cities updates URL and returns to root when all are removed', asy
   await expect(page.locator('#cities .city-row')).toHaveCount(1);
   await expect.poll(() => getOrderedCitySlugs(page)).toEqual([MELBOURNE_SLUG]);
   await expect(page).toHaveURL(new RegExp(`/compare/${MELBOURNE_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`));
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([MELBOURNE_SLUG]);
 
   await cityRow(page, MELBOURNE_SLUG).locator('button[data-action="remove"]').click();
   await expect(page.locator('#cities .city-row')).toHaveCount(0);
   await expect.poll(() => new URL(page.url()).pathname).toBe('/');
+  await expect.poll(() => getSavedCitySlugs(page)).toBeNull();
+});
+
+test('valid compare URL overrides saved cities and becomes the new root default', async ({ page }) => {
+  await page.addInitScript(
+    ({ storageKey, citySlugs }) => {
+      window.localStorage.setItem(storageKey, JSON.stringify(citySlugs));
+    },
+    { storageKey: SAVED_CITIES_STORAGE_KEY, citySlugs: [MELBOURNE_SLUG] },
+  );
+
+  await page.goto('/compare/new-york-us/melbourne-au/2026-03-08T09-30');
+
+  await expect.poll(() => getOrderedCitySlugs(page)).toEqual([NEW_YORK_SLUG, MELBOURNE_SLUG]);
+  await expect(page.locator('#date')).toHaveValue('2026-03-08');
+  await expect(page.locator('#time')).toHaveValue('09:30');
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([NEW_YORK_SLUG, MELBOURNE_SLUG]);
+});
+
+test('invalid compare URL does not consume or overwrite saved cities', async ({ page }) => {
+  await page.addInitScript(
+    ({ storageKey, citySlugs }) => {
+      window.localStorage.setItem(storageKey, JSON.stringify(citySlugs));
+    },
+    { storageKey: SAVED_CITIES_STORAGE_KEY, citySlugs: [MELBOURNE_SLUG, NEW_YORK_SLUG] },
+  );
+
+  await page.goto('/compare/not-a-city');
+
+  await expect(page.locator('#cities .city-row')).toHaveCount(0);
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/');
+  await expect.poll(() => getSavedCitySlugs(page)).toEqual([MELBOURNE_SLUG, NEW_YORK_SLUG]);
 });
 
 test('date and time inputs update app state and path datetime segment', async ({ page }) => {
@@ -130,6 +185,10 @@ test('city row uses a compact layout on mobile widths', async ({ page }) => {
     { width: 390, height: 844, scaleHidden: true },
     { width: 1280, height: 900, scaleHidden: false },
   ];
+
+  await page.addInitScript((storageKey) => {
+    window.localStorage.removeItem(storageKey);
+  }, SAVED_CITIES_STORAGE_KEY);
 
   for (const testCase of cases) {
     await page.setViewportSize({ width: testCase.width, height: testCase.height });

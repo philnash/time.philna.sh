@@ -5,6 +5,7 @@ const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
+const SAVED_CITIES_STORAGE_KEY = 'time.philna.sh-cities';
 const THEME_STORAGE_KEY = 'time.philna.sh-theme';
 const VALID_THEME_CHOICES = new Set(['system', 'light', 'dark']);
 const HEADER_ICON_DEFAULT = '/assets/icon.svg';
@@ -392,6 +393,79 @@ function minutesToTimeString(totalMinutes) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
+function normalizeCitySlugs(slugs) {
+  if (!Array.isArray(slugs)) {
+    return [];
+  }
+
+  const uniqueCities = [];
+  const seen = new Set();
+
+  for (const slug of slugs) {
+    if (typeof slug !== 'string' || seen.has(slug) || !citiesBySlug.has(slug)) {
+      continue;
+    }
+
+    seen.add(slug);
+    uniqueCities.push(slug);
+  }
+
+  return uniqueCities;
+}
+
+function persistSavedCities(citySlugs) {
+  try {
+    if (!Array.isArray(citySlugs) || citySlugs.length === 0) {
+      localStorage.removeItem(SAVED_CITIES_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(SAVED_CITIES_STORAGE_KEY, JSON.stringify(citySlugs));
+  } catch {
+  }
+}
+
+function readSavedCities() {
+  try {
+    const rawValue = localStorage.getItem(SAVED_CITIES_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    const savedCities = normalizeCitySlugs(parsedValue);
+
+    if (!savedCities.length) {
+      localStorage.removeItem(SAVED_CITIES_STORAGE_KEY);
+      return [];
+    }
+
+    return savedCities;
+  } catch {
+    try {
+      localStorage.removeItem(SAVED_CITIES_STORAGE_KEY);
+    } catch {
+    }
+
+    return [];
+  }
+}
+
+function buildStateForCities(citySlugs, pathIncludesDateTime = true) {
+  const normalizedCities = normalizeCitySlugs(citySlugs);
+  if (!normalizedCities.length) {
+    return buildDefaultState();
+  }
+
+  const anchorCity = citiesBySlug.get(normalizedCities[0]);
+
+  return {
+    cities: normalizedCities,
+    dateTime: formatNowForTimeZone(anchorCity?.timeZone),
+    pathIncludesDateTime,
+  };
+}
+
 function serializePath(current, withDateTime = includeDateInUrl) {
   if (!current.cities.length) {
     return '/';
@@ -450,12 +524,9 @@ function parsePath(pathname) {
   const pathIncludesDateTime = Boolean(parsedDateTime);
 
   const cityPathSegments = pathIncludesDateTime ? segments.slice(1, -1) : segments.slice(1);
-  const candidateCities = cityPathSegments.map((segment) => decodeURIComponent(segment));
-  if (!candidateCities.length) {
-    return null;
-  }
-
-  const uniqueCities = [...new Set(candidateCities)].filter((slug) => citiesBySlug.has(slug));
+  const uniqueCities = normalizeCitySlugs(
+    cityPathSegments.map((segment) => decodeURIComponent(segment)),
+  );
   if (!uniqueCities.length) {
     return null;
   }
@@ -470,17 +541,22 @@ function parsePath(pathname) {
   };
 }
 
-function stateFromPath(pathname) {
+function resolveStateFromLocation(pathname) {
   const parsed = parsePath(pathname);
   if (parsed) {
-    return parsed;
+    return { state: parsed, persistCities: true };
   }
 
   if (pathname === '/') {
-    return buildDefaultState();
+    const savedCities = readSavedCities();
+    if (savedCities.length) {
+      return { state: buildStateForCities(savedCities), persistCities: true };
+    }
+
+    return { state: buildDefaultState(), persistCities: false };
   }
 
-  return null;
+  return { state: null, persistCities: false };
 }
 
 function updateMessage(text = '') {
@@ -775,11 +851,17 @@ function renderCities() {
   updateMessage('');
 }
 
-function applyState(nextState, historyMode = 'push') {
+function applyState(nextState, historyMode = 'push', options = {}) {
+  const { persistCities = false } = options;
+
   state.cities = nextState.cities;
   state.dateTime = nextState.dateTime;
   if (typeof nextState.pathIncludesDateTime === 'boolean') {
     includeDateInUrl = nextState.pathIncludesDateTime;
+  }
+
+  if (persistCities) {
+    persistSavedCities(state.cities);
   }
 
   syncDateTimeInputs(state.dateTime);
@@ -798,7 +880,8 @@ function applyState(nextState, historyMode = 'push') {
 function replacePathFromState() {
   const nextPath = serializePath(state);
   if (location.pathname !== nextPath) {
-    navigateToPath(nextPath, 'replace');
+    history.replaceState(null, '', nextPath);
+    trackPageView(nextPath);
   }
 }
 
@@ -832,7 +915,7 @@ function moveCity(slug, direction) {
 
   const next = [...state.cities];
   [next[index], next[target]] = [next[target], next[index]];
-  applyState({ ...state, cities: next });
+  applyState({ ...state, cities: next }, 'push', { persistCities: true });
 }
 
 function removeCity(slug) {
@@ -841,7 +924,7 @@ function removeCity(slug) {
   }
 
   const nextCities = state.cities.filter((citySlug) => citySlug !== slug);
-  applyState({ ...state, cities: nextCities });
+  applyState({ ...state, cities: nextCities }, 'push', { persistCities: true });
 }
 
 function addCity(slug) {
@@ -850,7 +933,7 @@ function addCity(slug) {
   }
 
   const nextCities = [...state.cities, slug];
-  applyState({ ...state, cities: nextCities });
+  applyState({ ...state, cities: nextCities }, 'push', { persistCities: true });
   refs.search.value = '';
   searchResults = [];
   renderSearchResults();
@@ -1170,13 +1253,12 @@ function bindEvents() {
         return;
       }
 
-      const nextState = stateFromPath(destination.pathname);
       const isAppPath =
         destination.pathname === '/' ||
         destination.pathname === ROUTE_PREFIX ||
         destination.pathname.startsWith(`${ROUTE_PREFIX}/`);
 
-      if (!nextState && !isAppPath) {
+      if (!isAppPath) {
         return;
       }
 
@@ -1186,7 +1268,10 @@ function bindEvents() {
 
       event.intercept({
         handler: async () => {
-          applyState(nextState || buildDefaultState(), 'none');
+          const resolvedState = resolveStateFromLocation(destination.pathname);
+          applyState(resolvedState.state || buildDefaultState(), 'none', {
+            persistCities: resolvedState.persistCities,
+          });
           if (destination.pathname !== serializePath(state)) {
             replacePathFromState();
           } else {
@@ -1199,8 +1284,10 @@ function bindEvents() {
   }
 
   window.addEventListener('popstate', () => {
-    const nextState = stateFromPath(location.pathname) || buildDefaultState();
-    applyState(nextState, 'none');
+    const resolvedState = resolveStateFromLocation(location.pathname);
+    applyState(resolvedState.state || buildDefaultState(), 'none', {
+      persistCities: resolvedState.persistCities,
+    });
     if (location.pathname !== serializePath(state)) {
       replacePathFromState();
     } else {
@@ -1239,8 +1326,10 @@ async function init() {
     citiesBySlug.set(city.slug, city);
   }
 
-  const initialState = stateFromPath(location.pathname) || buildDefaultState();
-  applyState(initialState, 'none');
+  const initialState = resolveStateFromLocation(location.pathname);
+  applyState(initialState.state || buildDefaultState(), 'none', {
+    persistCities: initialState.persistCities,
+  });
 
   updateClipboardUi();
   setSharePanelOpen(false);
