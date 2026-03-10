@@ -124,6 +124,57 @@ test('controls layout stays stable across narrow and wide viewports', async ({ p
   }
 });
 
+test('city row uses a compact layout on mobile widths', async ({ page }) => {
+  const cases = [
+    { width: 320, height: 844, scaleHidden: true },
+    { width: 390, height: 844, scaleHidden: true },
+    { width: 1280, height: 900, scaleHidden: false },
+  ];
+
+  for (const testCase of cases) {
+    await page.setViewportSize({ width: testCase.width, height: testCase.height });
+    await page.goto('/');
+    await addCityBySlug(page, NEW_YORK_SLUG, NEW_YORK_SLUG);
+
+    const layout = await page.evaluate(() => {
+      const article = document.querySelector('.city-row article');
+      const main = article.querySelector('.city-main');
+      const time = article.querySelector('.city-time');
+      const scrubber = article.querySelector('.city-time-scrubber');
+      const actions = article.querySelector('.city-actions');
+      const scale = article.querySelector('.city-time-scale');
+      const articleRect = article.getBoundingClientRect();
+      const mainRect = main.getBoundingClientRect();
+      const timeRect = time.getBoundingClientRect();
+      const scrubberRect = scrubber.getBoundingClientRect();
+      const actionsRect = actions.getBoundingClientRect();
+
+      return {
+        viewport: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        scaleHidden: getComputedStyle(scale).display === 'none',
+        timeOnRight: timeRect.x >= mainRect.x + Math.min(mainRect.width * 0.55, 80),
+        actionsBelowTime: actionsRect.y >= timeRect.bottom - 1,
+        scrubberNarrow: scrubberRect.width <= articleRect.width * 0.65,
+        scrubberOnLeft: scrubberRect.x < actionsRect.x,
+        articleFitsViewport: Math.round(articleRect.right) <= window.innerWidth - 1,
+      };
+    });
+
+    expect(layout.viewport, `viewport width ${testCase.width}`).toBe(testCase.width);
+    expect(layout.scrollWidth, `scroll width at ${testCase.width}`).toBe(testCase.width);
+    expect(layout.scaleHidden, `time scale visibility at ${testCase.width}`).toBe(testCase.scaleHidden);
+    expect(layout.articleFitsViewport, `article width at ${testCase.width}`).toBe(true);
+
+    if (testCase.scaleHidden) {
+      expect(layout.timeOnRight, `time position at ${testCase.width}`).toBe(true);
+      expect(layout.actionsBelowTime, `actions position at ${testCase.width}`).toBe(true);
+      expect(layout.scrubberNarrow, `scrubber width at ${testCase.width}`).toBe(true);
+      expect(layout.scrubberOnLeft, `scrubber position at ${testCase.width}`).toBe(true);
+    }
+  }
+});
+
 test('non-anchor slider previews datetime and commits URL on change', async ({ page }) => {
   await page.goto('/');
 

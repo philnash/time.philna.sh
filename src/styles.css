@@ -622,6 +622,12 @@ input[type='time']::-webkit-datetime-edit-fields-wrapper {
   color: var(--muted);
 }
 
+.city-time {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
 .time-line {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(1.65rem, 4vw, 2.2rem);
@@ -739,7 +745,26 @@ input[type='time']::-webkit-datetime-edit-fields-wrapper {
     align-items: start;
   }
 
+  .city-main {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .city-time {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .city-time-scrubber {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+  }
+
   .city-actions {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: start;
     justify-content: flex-end;
   }
 }
@@ -760,5 +785,100 @@ input[type='time']::-webkit-datetime-edit-fields-wrapper {
 
   .hero-actions {
     align-self: flex-start;
+  }
+
+  .cities {
+    gap: 0.5rem;
+  }
+
+  .city-row article {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.55rem;
+    row-gap: 0.45rem;
+    padding: 0.68rem;
+  }
+
+  .city-main {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .city-name {
+    overflow-wrap: anywhere;
+  }
+
+  .city-name .city-country {
+    display: block;
+    margin-inline-start: 0;
+    margin-top: 0.12rem;
+    font-size: 0.6em;
+    line-height: 1.05;
+  }
+
+  .city-main h2 {
+    font-size: clamp(1.2rem, 6vw, 1.55rem);
+  }
+
+  .city-meta,
+  .date-line,
+  .city-zone-now,
+  .delta-line {
+    margin-top: 0.08rem;
+    font-size: 0.8rem;
+    line-height: 1.16;
+  }
+
+  .city-time {
+    grid-column: 2;
+    grid-row: 1;
+    justify-items: end;
+    align-content: start;
+    text-align: right;
+    min-width: 5.75rem;
+  }
+
+  .time-line {
+    font-size: clamp(1.45rem, 7vw, 1.8rem);
+  }
+
+  .date-line {
+    margin-top: 0;
+  }
+
+  .delta-line {
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  .city-time-scrubber {
+    grid-column: 1;
+    grid-row: 2;
+    width: min(100%, 10.5rem);
+    align-self: start;
+    gap: 0.15rem;
+  }
+
+  .city-time-scale {
+    display: none;
+  }
+
+  .city-actions {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+
+  .city-actions button {
+    min-width: 1.9rem;
+    min-height: 1.9rem;
+    padding: 0.24rem 0.38rem;
+    font-size: 0.82rem;
+  }
+
+  .city-actions button[data-action='remove'] {
+    min-width: 1.9rem;
   }
 }
