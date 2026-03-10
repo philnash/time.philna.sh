@@ -2,6 +2,8 @@ const CITY_DATA_URL = '/data/cities.json';
 const ROUTE_PREFIX = '/compare';
 const ROUTE_SEGMENT = ROUTE_PREFIX.slice(1);
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^\d{2}:\d{2}$/;
 const DATETIME_PATH_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}[-:]\d{2}$/;
 const THEME_STORAGE_KEY = 'time.philna.sh-theme';
 const VALID_THEME_CHOICES = new Set(['system', 'light', 'dark']);
@@ -28,7 +30,8 @@ const state = {
 };
 
 const refs = {
-  datetime: document.getElementById('datetime'),
+  date: document.getElementById('date'),
+  time: document.getElementById('time'),
   search: document.getElementById('city-search'),
   results: document.getElementById('search-results'),
   citiesPanel: document.getElementById('cities-panel'),
@@ -224,6 +227,48 @@ function parseDateTimeLocal(value) {
   const [hour, minute] = timePart.split(':').map(Number);
 
   return { year, month, day, hour, minute };
+}
+
+function splitDateTimeLocal(value) {
+  if (!DATETIME_PATTERN.test(value)) {
+    return { date: '', time: '' };
+  }
+
+  const [date, time] = value.split('T');
+  return { date, time };
+}
+
+function combineDateAndTime(date, time) {
+  if (!DATE_PATTERN.test(date) || !TIME_PATTERN.test(time)) {
+    return null;
+  }
+
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  const normalizedDate = new Date(Date.UTC(year, month - 1, day));
+
+  const isValidDate =
+    normalizedDate.getUTCFullYear() === year &&
+    normalizedDate.getUTCMonth() === month - 1 &&
+    normalizedDate.getUTCDate() === day;
+  const isValidTime = hour >= 0 && hour < 24 && minute >= 0 && minute < 60;
+
+  if (!isValidDate || !isValidTime) {
+    return null;
+  }
+
+  return `${date}T${time}`;
+}
+
+function syncDateTimeInputs(value) {
+  const { date, time } = splitDateTimeLocal(value);
+  if (refs.date) {
+    refs.date.value = date;
+  }
+
+  if (refs.time) {
+    refs.time.value = time;
+  }
 }
 
 function toPathDateTime(value) {
@@ -737,7 +782,7 @@ function applyState(nextState, historyMode = 'push') {
     includeDateInUrl = nextState.pathIncludesDateTime;
   }
 
-  refs.datetime.value = state.dateTime;
+  syncDateTimeInputs(state.dateTime);
   if (refs.includeDateInLink) {
     refs.includeDateInLink.checked = includeDateInUrl;
   }
@@ -947,15 +992,36 @@ function bindEvents() {
     });
   }
 
-  refs.datetime.addEventListener('change', () => {
-    const next = refs.datetime.value;
+  const handleDateTimeChange = (next) => {
     if (!DATETIME_PATTERN.test(next)) {
-      updateMessage('Invalid date/time format.');
-      refs.datetime.value = state.dateTime;
+      updateMessage('Invalid date/time format. Use YYYY-MM-DD and HH:MM.');
+      syncDateTimeInputs(state.dateTime);
       return;
     }
 
     applyState({ ...state, dateTime: next }, 'push');
+  };
+
+  refs.date.addEventListener('change', () => {
+    const next = combineDateAndTime(refs.date.value, refs.time.value);
+    if (!next) {
+      updateMessage('Invalid date/time format. Use YYYY-MM-DD and HH:MM.');
+      syncDateTimeInputs(state.dateTime);
+      return;
+    }
+
+    handleDateTimeChange(next);
+  });
+
+  refs.time.addEventListener('change', () => {
+    const next = combineDateAndTime(refs.date.value, refs.time.value);
+    if (!next) {
+      updateMessage('Invalid date/time format. Use YYYY-MM-DD and HH:MM.');
+      syncDateTimeInputs(state.dateTime);
+      return;
+    }
+
+    handleDateTimeChange(next);
   });
 
   refs.search.addEventListener('input', () => {
@@ -1008,7 +1074,7 @@ function bindEvents() {
       return;
     }
 
-    refs.datetime.value = previewAnchorDateTime;
+    syncDateTimeInputs(previewAnchorDateTime);
     renderRowsForAnchorDateTime(previewAnchorDateTime, row.dataset.slug);
   });
 

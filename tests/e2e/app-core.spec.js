@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test');
 const {
   addCityBySlug,
   cityRow,
+  displayedDateTime,
   getOrderedCitySlugs,
   openSharePanel,
   setDateTime,
@@ -63,7 +64,7 @@ test('removing cities updates URL and returns to root when all are removed', asy
   await expect.poll(() => new URL(page.url()).pathname).toBe('/');
 });
 
-test('datetime input updates app state and path datetime segment', async ({ page }) => {
+test('date and time inputs update app state and path datetime segment', async ({ page }) => {
   await page.goto('/');
 
   await addCityBySlug(page, MELBOURNE_SLUG, MELBOURNE_SLUG);
@@ -77,6 +78,52 @@ test('datetime input updates app state and path datetime segment', async ({ page
   await expect(dateLine).not.toHaveText(beforeDateLine);
 });
 
+test('controls layout stays stable across narrow and wide viewports', async ({ page }) => {
+  const cases = [
+    { width: 320, height: 844, searchBelowTopRow: true },
+    { width: 390, height: 844, searchBelowTopRow: true },
+    { width: 1280, height: 900, searchBelowTopRow: false },
+  ];
+
+  for (const testCase of cases) {
+    await page.setViewportSize({ width: testCase.width, height: testCase.height });
+    await page.goto('/');
+
+    const layout = await page.evaluate(() => {
+      const time = document.getElementById('time');
+      const date = document.getElementById('date');
+      const now = document.getElementById('set-now');
+      const search = document.getElementById('city-search');
+      const rect = (element) => element.getBoundingClientRect();
+      const timeRect = rect(time);
+      const dateRect = rect(date);
+      const nowRect = rect(now);
+      const searchRect = rect(search);
+      const topRowBottom = Math.max(timeRect.bottom, dateRect.bottom, nowRect.bottom);
+
+      return {
+        viewport: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        sameTopRow:
+          Math.abs(timeRect.bottom - nowRect.bottom) < 2 &&
+          Math.abs(dateRect.bottom - nowRect.bottom) < 2,
+        equalHeights:
+          Math.abs(timeRect.height - nowRect.height) < 2 &&
+          Math.abs(dateRect.height - nowRect.height) < 2,
+        searchBelowTopRow: searchRect.y > topRowBottom,
+      };
+    });
+
+    expect(layout.viewport, `viewport width ${testCase.width}`).toBe(testCase.width);
+    expect(layout.scrollWidth, `scroll width at ${testCase.width}`).toBe(testCase.width);
+    expect(layout.sameTopRow, `top row alignment at ${testCase.width}`).toBe(true);
+    expect(layout.equalHeights, `control heights at ${testCase.width}`).toBe(true);
+    expect(layout.searchBelowTopRow, `search wrapping at ${testCase.width}`).toBe(
+      testCase.searchBelowTopRow,
+    );
+  }
+});
+
 test('non-anchor slider previews datetime and commits URL on change', async ({ page }) => {
   await page.goto('/');
 
@@ -87,13 +134,12 @@ test('non-anchor slider previews datetime and commits URL on change', async ({ p
   const currentValue = Number(await slider.inputValue());
   const nextValue = (currentValue + 60) % 1440;
 
-  const datetimeInput = page.locator('#datetime');
-  const beforeDatetime = await datetimeInput.inputValue();
+  const beforeDatetime = await displayedDateTime(page);
   const beforeUrl = page.url();
 
   await setSliderValue(page, NEW_YORK_SLUG, nextValue, 'input');
 
-  await expect(datetimeInput).not.toHaveValue(beforeDatetime);
+  await expect.poll(() => displayedDateTime(page)).not.toBe(beforeDatetime);
   await expect.poll(() => page.url()).toBe(beforeUrl);
 
   await setSliderValue(page, NEW_YORK_SLUG, nextValue, 'change');
@@ -165,11 +211,12 @@ test('copy button uses clipboard API and shows success state', async ({ page }) 
   expect(writes).toEqual([expectedUrl]);
 });
 
-test('deep link hydrates compared cities and datetime input', async ({ page }) => {
+test('deep link hydrates compared cities and date/time inputs', async ({ page }) => {
   await page.goto('/compare/melbourne-au/new-york-us/2026-03-08T09-30');
 
   await expect.poll(() => getOrderedCitySlugs(page)).toEqual([MELBOURNE_SLUG, NEW_YORK_SLUG]);
-  await expect(page.locator('#datetime')).toHaveValue('2026-03-08T09:30');
+  await expect(page.locator('#date')).toHaveValue('2026-03-08');
+  await expect(page.locator('#time')).toHaveValue('09:30');
 });
 
 test('back and forward navigation keeps UI and URL synchronized', async ({ page }) => {

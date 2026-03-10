@@ -245,14 +245,21 @@
       </section>
 
       <section class="panel controls" aria-label="Comparison controls">
-        <div class="field">
-          <label for="datetime">Date & Time</label>
-          <input id="datetime" name="datetime" type="datetime-local" />
-        </div>
+        <div class="controls-primary">
+          <div class="field field-time">
+            <label for="time">Time</label>
+            <input id="time" name="time" type="time" step="60" />
+          </div>
 
-        <button id="set-now" class="now-button controls-now" type="button">
-          now
-        </button>
+          <div class="field field-date">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" />
+          </div>
+
+          <button id="set-now" class="now-button controls-now" type="button">
+            now
+          </button>
+        </div>
 
         <div class="field field-search">
           <label for="city-search">Add City</label>

@@ -6,8 +6,15 @@ function cityRow(page, slug) {
   return page.locator(`#cities .city-row[data-slug="${slug}"]`);
 }
 
+async function displayedDateTime(page) {
+  const date = await page.locator('#date').inputValue();
+  const time = await page.locator('#time').inputValue();
+  return `${date}T${time}`;
+}
+
 async function addCityBySlug(page, slug, query) {
-  await expect(page.locator('#datetime')).toHaveValue(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+  await expect(page.locator('#date')).toHaveValue(/\d{4}-\d{2}-\d{2}/);
+  await expect(page.locator('#time')).toHaveValue(/\d{2}:\d{2}/);
 
   const searchInput = page.locator('#city-search');
   await searchInput.fill(query);
@@ -40,10 +47,18 @@ async function closeSharePanel(page) {
 }
 
 async function setDateTime(page, value) {
-  const dateTimeInput = page.locator('#datetime');
-  await dateTimeInput.fill(value);
-  await dateTimeInput.dispatchEvent('change');
-  await expect(dateTimeInput).toHaveValue(value);
+  const [date, time] = value.split('T');
+  const dateInput = page.locator('#date');
+  const timeInput = page.locator('#time');
+
+  await dateInput.fill(date);
+  await dateInput.dispatchEvent('change');
+  await timeInput.fill(time);
+  await timeInput.dispatchEvent('change');
+
+  await expect(dateInput).toHaveValue(date);
+  await expect(timeInput).toHaveValue(time);
+  await expect.poll(() => displayedDateTime(page)).toBe(value);
 }
 
 async function getOrderedCitySlugs(page) {
@@ -66,6 +81,7 @@ module.exports = {
   addCityBySlug,
   cityRow,
   closeSharePanel,
+  displayedDateTime,
   getOrderedCitySlugs,
   openSharePanel,
   setDateTime,

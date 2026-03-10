@@ -16,7 +16,7 @@
     "test": "node --check src/app.js && node --check public/sw.js && node --check scripts/build-cities.js && node --check vite.config.mjs"
   },
   "keywords": [],
-  "author": "",
+  "author": "Phil Nash",
   "license": "MIT",
   "engines": {
     "node": "24.x"

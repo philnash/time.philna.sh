@@ -193,14 +193,36 @@ body {
 
 .controls {
   --controls-gap: 0.7rem;
-  display: grid;
+  --controls-primary-gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
   gap: var(--controls-gap);
+}
+
+.controls > * {
+  min-width: 0;
+}
+
+.controls-primary {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: end;
+  gap: var(--controls-primary-gap);
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
+.controls-primary > * {
+  min-width: 0;
 }
 
 .field {
   display: grid;
   gap: 0.4rem;
   position: relative;
+  min-width: 0;
 }
 
 .field label {
@@ -222,7 +244,27 @@ body {
 }
 
 .controls-now {
-  align-self: end;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.field-time {
+  flex: 0.78 1 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.field-date {
+  flex: 1.22 1 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.field-search {
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .share-toggle {
@@ -264,16 +306,45 @@ body {
   display: block;
 }
 
-input[type='datetime-local'],
+input[type='date'],
+input[type='time'],
 input[type='search'],
 .route-preview-input {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 42px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.6rem 0.75rem;
+  padding: 0 0.6rem;
   background: color-mix(in srgb, var(--surface) 92%, var(--accent-soft) 8%);
   color: var(--text);
   font: inherit;
+  line-height: normal;
+}
+
+input[type='date'],
+input[type='time'] {
+  min-inline-size: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+  line-height: 40px;
+  text-align: left;
+}
+
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  min-height: 100%;
+}
+
+input[type='date']::-webkit-datetime-edit,
+input[type='time']::-webkit-datetime-edit,
+input[type='date']::-webkit-datetime-edit-fields-wrapper,
+input[type='time']::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
 }
 
 .search-results {
@@ -642,9 +713,25 @@ input[type='search'],
 }
 
 @media (min-width: 760px) {
-  .controls {
-    grid-template-columns: 280px auto 1fr;
-    align-items: end;
+  .controls-primary {
+    flex: 0 1 auto;
+    width: auto;
+    gap: var(--controls-gap);
+  }
+
+  .field-time {
+    flex: 0 0 8rem;
+    width: auto;
+  }
+
+  .field-date {
+    flex: 0 0 11rem;
+    width: auto;
+  }
+
+  .field-search {
+    flex: 1 1 14rem;
+    min-width: 14rem;
   }
 
   .city-row article {
