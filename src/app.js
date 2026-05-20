@@ -84,12 +84,17 @@ function normalizeText(value) {
 
 function buildCitySearchIndex(city) {
   return normalizeText(
-    `${city.name} ${city.country} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
+    `${city.name} ${city.state || ''} ${city.country} ${city.timeZone} ${city.slug} ${(city.aliases || []).join(' ')}`,
   );
 }
 
+function buildCityLocationLabel(city) {
+  return [city.state, city.country].filter(Boolean).join(', ');
+}
+
 function buildCitySearchLabel(city) {
-  return `${city.name}, ${city.country} (${city.timeZone})`;
+  const locationLabel = buildCityLocationLabel(city);
+  return `${city.name}${locationLabel ? `, ${locationLabel}` : ''} (${city.timeZone})`;
 }
 
 function getFormatter(timeZone, options, locale) {
@@ -810,10 +815,11 @@ function renderCities() {
     const cityName = row.querySelector('.city-name');
     if (cityName) {
       cityName.textContent = city.name;
-      if (city.country) {
+      const locationLabel = buildCityLocationLabel(city);
+      if (locationLabel) {
         const country = document.createElement('span');
         country.className = 'city-country';
-        country.textContent = city.country;
+        country.textContent = locationLabel;
         cityName.append(country);
       }
     }

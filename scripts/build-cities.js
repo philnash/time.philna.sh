@@ -73,6 +73,7 @@ const output = rows.map((row) => {
     slug,
     name: row.city,
     country: row.country,
+    ...(row.countryCode === 'US' && row.province ? { state: row.province } : {}),
     timeZone: row.timeZone,
     ...(aliases.length ? { aliases } : {}),
   };

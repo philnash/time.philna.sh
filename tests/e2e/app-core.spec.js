@@ -13,6 +13,7 @@ const {
 
 const MELBOURNE_SLUG = 'melbourne-au';
 const NEW_YORK_SLUG = 'new-york-us';
+const COLUMBUS_OHIO_SLUG = 'columbus-us';
 const DEFAULT_COMPARE_URL_PATTERN =
   /\/compare\/[a-z0-9-]+(?:\/[a-z0-9-]+)*\/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}$/;
 
@@ -34,6 +35,19 @@ test('search and add city updates list and URL', async ({ page }) => {
   await expect(page.locator('#cities .city-row')).toHaveCount(1);
   await expect(page).toHaveURL(new RegExp(`/compare/${MELBOURNE_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`));
   await expect.poll(() => getSavedCitySlugs(page)).toEqual([MELBOURNE_SLUG]);
+});
+
+test('US cities can be searched and displayed with their state', async ({ page }) => {
+  await page.goto('/');
+
+  await addCityBySlug(page, COLUMBUS_OHIO_SLUG, 'columbus ohio');
+
+  const row = cityRow(page, COLUMBUS_OHIO_SLUG);
+  await expect(row.locator('.city-name')).toContainText('Columbus');
+  await expect(row.locator('.city-country')).toHaveText('Ohio, United States of America');
+  await expect(page).toHaveURL(
+    new RegExp(`/compare/${COLUMBUS_OHIO_SLUG}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`),
+  );
 });
 
 test('root restores saved cities from local storage and rewrites to compare path', async ({ page }) => {
