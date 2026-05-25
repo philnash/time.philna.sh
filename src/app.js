@@ -47,6 +47,9 @@ const refs = {
   includeDateInLink: document.getElementById('share-include-datetime'),
   shareToggle: document.getElementById('share-toggle'),
   sharePanel: document.getElementById('share-panel'),
+  aboutToggle: document.getElementById('about-toggle'),
+  aboutDialog: document.getElementById('about-dialog'),
+  aboutClose: document.getElementById('about-close'),
   brandIcon: document.querySelector('.brand-icon'),
   themeToggle: document.querySelector('.theme-toggle'),
 };
@@ -61,6 +64,7 @@ let sharePanelHideTimer = null;
 let sharePanelCloseTransitionHandler = null;
 let shareMessageHideTimer = null;
 let shareMessageClearTimer = null;
+let aboutDialogCloseTimer = null;
 let lastTrackedPath = '';
 
 const hasNavigationApi =
@@ -1071,6 +1075,37 @@ async function copyShareLink() {
   }
 }
 
+function openAboutDialog() {
+  if (!refs.aboutDialog || refs.aboutDialog.open) {
+    return;
+  }
+
+  if (aboutDialogCloseTimer) {
+    window.clearTimeout(aboutDialogCloseTimer);
+    aboutDialogCloseTimer = null;
+  }
+
+  refs.aboutDialog.classList.remove('is-closing');
+  refs.aboutDialog.showModal();
+}
+
+function closeAboutDialog() {
+  if (!refs.aboutDialog?.open) {
+    return;
+  }
+
+  if (refs.aboutDialog.classList.contains('is-closing')) {
+    return;
+  }
+
+  refs.aboutDialog.classList.add('is-closing');
+  aboutDialogCloseTimer = window.setTimeout(() => {
+    refs.aboutDialog.close();
+    refs.aboutDialog.classList.remove('is-closing');
+    aboutDialogCloseTimer = null;
+  }, 180);
+}
+
 function bindEvents() {
   if (refs.nowButton) {
     refs.nowButton.addEventListener('click', () => {
@@ -1218,6 +1253,31 @@ function bindEvents() {
     refs.shareToggle.addEventListener('click', () => {
       const isOpen = refs.shareToggle.getAttribute('aria-expanded') === 'true';
       setSharePanelOpen(!isOpen);
+    });
+  }
+
+  if (refs.aboutToggle) {
+    refs.aboutToggle.addEventListener('click', () => {
+      openAboutDialog();
+    });
+  }
+
+  if (refs.aboutClose) {
+    refs.aboutClose.addEventListener('click', () => {
+      closeAboutDialog();
+    });
+  }
+
+  if (refs.aboutDialog) {
+    refs.aboutDialog.addEventListener('click', (event) => {
+      if (event.target === refs.aboutDialog) {
+        closeAboutDialog();
+      }
+    });
+
+    refs.aboutDialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      closeAboutDialog();
     });
   }
 

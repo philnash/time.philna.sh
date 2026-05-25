@@ -268,7 +268,7 @@ body {
   min-width: 0;
 }
 
-.share-toggle {
+.icon-toggle {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft) 16%);
@@ -281,6 +281,13 @@ body {
   place-items: center;
 }
 
+.icon-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.icon-toggle:hover,
+.icon-toggle:focus-visible,
 .share-toggle:hover,
 .share-toggle:focus-visible,
 .now-button:hover,
@@ -560,6 +567,101 @@ input[type='time']::-webkit-datetime-edit-fields-wrapper {
 
 .share-message[data-state='success'] {
   color: var(--accent-strong);
+}
+
+.about-dialog {
+  width: min(32rem, calc(100vw - 1.25rem));
+  max-height: min(72vh, 34rem);
+  margin: auto auto 0.75rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 12px 12px;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  color: var(--text);
+  box-shadow: 0 22px 60px rgb(0 0 0 / 0.32);
+  overflow: hidden;
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.about-dialog[open] {
+  animation: about-slide-up 180ms ease-out forwards;
+}
+
+.about-dialog[open].is-closing {
+  animation: about-slide-down 180ms ease-in forwards;
+}
+
+.about-dialog::backdrop {
+  background: rgb(6 11 24 / 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.about-dialog-content {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.about-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.about-dialog h2,
+.about-dialog p {
+  margin: 0;
+}
+
+.about-dialog h2 {
+  font-size: 1.12rem;
+  line-height: 1.15;
+}
+
+.about-dialog p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.about-dialog a {
+  color: var(--accent-strong);
+  text-underline-offset: 0.14em;
+}
+
+.about-dialog a:hover,
+.about-dialog a:focus-visible {
+  color: var(--accent);
+}
+
+.about-credit {
+  padding-top: 0.1rem;
+}
+
+@keyframes about-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes about-slide-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
 }
 
 .sr-only {

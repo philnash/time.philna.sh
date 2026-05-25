@@ -27,6 +27,45 @@ test('initial load shows empty state and closed share panel', async ({ page }) =
   await expect.poll(() => new URL(page.url()).pathname).toBe('/');
 });
 
+test('about dialog opens from the bottom with usage and credit copy', async ({ page }) => {
+  await page.goto('/');
+
+  const aboutToggle = page.locator('#about-toggle');
+  const aboutDialog = page.locator('#about-dialog');
+
+  await expect(aboutDialog).toHaveJSProperty('tagName', 'DIALOG');
+  await expect(aboutDialog).not.toHaveAttribute('open', '');
+
+  await aboutToggle.click();
+
+  await expect(aboutDialog).toHaveAttribute('open', '');
+  await expect(aboutDialog.locator('#about-title')).toHaveText('About');
+  await expect(aboutDialog).toContainText('Search for cities');
+  await expect(aboutDialog).toContainText('adjust the time or date');
+  await expect(aboutDialog).toContainText('share');
+  await expect(aboutDialog).toContainText('Built by philnash with help from Codex');
+  await expect(aboutDialog.getByRole('link', { name: 'Codex' })).toHaveAttribute(
+    'href',
+    'https://openai.com/codex/',
+  );
+
+  const layout = await aboutDialog.evaluate((dialog) => {
+    const rect = dialog.getBoundingClientRect();
+    return {
+      bottomGap: Math.round(window.innerHeight - rect.bottom),
+      topHalf: rect.top > window.innerHeight / 2,
+    };
+  });
+
+  expect(layout.bottomGap).toBeLessThanOrEqual(24);
+  expect(layout.topHalf).toBe(true);
+
+  await page.locator('#about-close').click();
+
+  await expect(aboutDialog).toHaveClass(/is-closing/);
+  await expect(aboutDialog).not.toHaveAttribute('open', '');
+});
+
 test('search and add city updates list and URL', async ({ page }) => {
   await page.goto('/');
 

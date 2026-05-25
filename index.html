@@ -130,8 +130,34 @@
           </div>
 
           <button
+            id="about-toggle"
+            class="icon-toggle"
+            type="button"
+            aria-label="About Phil's Time"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle
+                cx="12"
+                cy="12"
+                r="8.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 10.8v5.2M12 7.4h.01"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="sr-only">About</span>
+          </button>
+
+          <button
             id="share-toggle"
-            class="share-toggle"
+            class="icon-toggle share-toggle"
             type="button"
             aria-expanded="false"
             aria-controls="share-panel"
@@ -284,6 +310,48 @@
         <p>Made by <a href="https://philna.sh">philnash</a></p>
       </footer>
     </main>
+
+    <dialog id="about-dialog" class="about-dialog" aria-labelledby="about-title">
+      <div class="about-dialog-content">
+        <div class="about-dialog-heading">
+          <h2 id="about-title">About</h2>
+          <button
+            id="about-close"
+            class="icon-toggle"
+            type="button"
+            aria-label="Close about dialog"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6L6 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="sr-only">Close</span>
+          </button>
+        </div>
+        <p>
+          Search for cities, add them to your comparison, then adjust the time
+          or date to see what that moment looks like around the world. Use it to
+          organise meetings, understand what time it is for your friends or
+          colleagues, or check whether Kathmandu is really in UTC+5:45.
+        </p>
+        <p>
+          You can use the first city as the anchor time, reorder cities when
+          priorities change, and share a link when you want someone else to see
+          the same comparison.
+        </p>
+        <p class="about-credit">
+          Built by <a href="https://philna.sh">philnash</a> with help from
+          <a href="https://openai.com/codex/">Codex</a>.  Please report any
+          issues or suggestions on
+          <a href="https://github.com/philnash/time.philna.sh/">GitHub</a>.
+        </p>
+      </div>
+    </dialog>
 
     <template id="city-row-template">
       <li class="city-row">
