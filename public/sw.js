@@ -1,4 +1,4 @@
-const CACHE_NAME = 'time.philna.sh-v48';
+const CACHE_NAME = 'time.philna.sh-v49';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

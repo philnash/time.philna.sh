@@ -13,7 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "test": "node --check src/app.js && node --check public/sw.js && node --check scripts/build-cities.js && node --check vite.config.mjs"
+    "test": "npm run build && node --check public/sw.js && node --check scripts/build-cities.js && node --check vite.config.mjs"
   },
   "keywords": [],
   "author": "Phil Nash",
@@ -23,6 +23,7 @@
   },
   "type": "commonjs",
   "dependencies": {
+    "@sentry/browser": "^10.53.1",
     "city-timezones": "^1.3.3",
     "d3-geo": "^3.1.1",
     "topojson-client": "^3.1.0",

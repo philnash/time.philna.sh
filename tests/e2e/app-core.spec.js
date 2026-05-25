@@ -27,6 +27,20 @@ test('initial load shows empty state and closed share panel', async ({ page }) =
   await expect.poll(() => new URL(page.url()).pathname).toBe('/');
 });
 
+test('initial load does not fetch Sentry from external domains', async ({ page }) => {
+  const sentryRequests = [];
+  page.on('request', (request) => {
+    const url = request.url();
+    if (url.includes('sentry-cdn.com') || url.includes('sentry.io')) {
+      sentryRequests.push(url);
+    }
+  });
+
+  await page.goto('/');
+
+  expect(sentryRequests).toEqual([]);
+});
+
 test('about dialog opens from the bottom with usage and credit copy', async ({ page }) => {
   await page.goto('/');
 

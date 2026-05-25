@@ -1,4 +1,8 @@
+import * as Sentry from '@sentry/browser';
+
 const CITY_DATA_URL = '/data/cities.json';
+const SENTRY_DSN =
+  'https://5826e1b58e6ef558d8088afc6671cb76@o4510739418382336.ingest.de.sentry.io/4511011241525328';
 const ROUTE_PREFIX = '/compare';
 const ROUTE_SEGMENT = ROUTE_PREFIX.slice(1);
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -24,6 +28,13 @@ const DATE_LINE_FORMAT_OPTIONS = {
   month: 'short',
   year: 'numeric',
 };
+
+if (import.meta.env.PROD) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    autoSessionTracking: false,
+  });
+}
 
 const state = {
   cities: [],
