@@ -4,6 +4,8 @@ A clean, modern, front-end-only time zone comparison app inspired by tools like 
 
 It lets you compare local time across cities worldwide, pick a custom date/time, and share the exact app state through a readable path URL.
 
+![A screenshot of the app showing two cities selected, Melbourne and New York.](./screenshot.jpg)
+
 ## Highlights
 
 - Front-end only: HTML, CSS, and vanilla JavaScript
