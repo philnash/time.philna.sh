@@ -71,6 +71,7 @@ let cities = [];
 let searchResults = [];
 let themeChoice = 'system';
 let includeDateInUrl = true;
+let includeDateInShareLink = true;
 let sharePanelHideTimer = null;
 let sharePanelCloseTransitionHandler = null;
 let shareMessageHideTimer = null;
@@ -584,7 +585,7 @@ function updateMessage(text = '') {
 }
 
 function updateRoutePreview() {
-  refs.routePreview.value = `${location.origin}${serializePath(state)}`;
+  refs.routePreview.value = `${location.origin}${serializePath(state, includeDateInShareLink)}`;
 }
 
 function clearShareMessageTimers() {
@@ -879,6 +880,7 @@ function applyState(nextState, historyMode = 'push', options = {}) {
   state.dateTime = nextState.dateTime;
   if (typeof nextState.pathIncludesDateTime === 'boolean') {
     includeDateInUrl = nextState.pathIncludesDateTime;
+    includeDateInShareLink = nextState.pathIncludesDateTime;
   }
 
   if (persistCities) {
@@ -887,7 +889,7 @@ function applyState(nextState, historyMode = 'push', options = {}) {
 
   syncDateTimeInputs(state.dateTime);
   if (refs.includeDateInLink) {
-    refs.includeDateInLink.checked = includeDateInUrl;
+    refs.includeDateInLink.checked = includeDateInShareLink;
   }
   renderCities();
   updateRoutePreview();
@@ -1294,9 +1296,8 @@ function bindEvents() {
 
   if (refs.includeDateInLink) {
     refs.includeDateInLink.addEventListener('change', () => {
-      includeDateInUrl = refs.includeDateInLink.checked;
+      includeDateInShareLink = refs.includeDateInLink.checked;
       updateRoutePreview();
-      replacePathFromState();
     });
   }
 

@@ -345,27 +345,32 @@ test('non-anchor slider previews datetime and commits URL on change', async ({ p
 test('share panel and include datetime toggle keep route preview synchronized', async ({ page }) => {
   await page.goto('/');
 
+  const selectedDateTime = '2026-03-08T09:30';
   await addCityBySlug(page, MELBOURNE_SLUG, MELBOURNE_SLUG);
   await addCityBySlug(page, NEW_YORK_SLUG, NEW_YORK_SLUG);
-  await setDateTime(page, '2026-03-08T09:30');
+  await setDateTime(page, selectedDateTime);
 
   await openSharePanel(page);
 
   const routePreview = page.locator('#route-preview');
   const includeDateToggle = page.locator('#share-include-datetime');
   const noDatePath = `/compare/${MELBOURNE_SLUG}/${NEW_YORK_SLUG}`;
+  const datePath = `${noDatePath}/2026-03-08T09-30`;
 
+  await expect(page).toHaveURL(datePath);
   await expect(routePreview).toHaveValue(page.url());
 
   await includeDateToggle.setChecked(false);
 
-  await expect(page).toHaveURL(noDatePath);
+  await expect(page).toHaveURL(datePath);
   await expect(routePreview).toHaveValue(`http://127.0.0.1:4173${noDatePath}`);
+  await expect.poll(() => displayedDateTime(page)).toBe(selectedDateTime);
 
   await includeDateToggle.setChecked(true);
 
-  await expect(page).toHaveURL(new RegExp(`${noDatePath}/\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}$`));
+  await expect(page).toHaveURL(datePath);
   await expect(routePreview).toHaveValue(page.url());
+  await expect.poll(() => displayedDateTime(page)).toBe(selectedDateTime);
 });
 
 test('copy button uses clipboard API and shows success state', async ({ page }) => {
